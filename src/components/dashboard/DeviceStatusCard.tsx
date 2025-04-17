@@ -36,7 +36,6 @@ interface DeviceStatusCardProps {
   batteryLevel?: number;
   lastSync?: string;
   startDate?: string;
-  compartments?: CompartmentStatus[];
   onConfigureCompartments?: () => void;
 }
 
@@ -46,35 +45,6 @@ const DeviceStatusCard = ({
   lastSync = "Today at 08:15 AM",
   startDate = "2023-04-10",
   onConfigureCompartments,
-  compartments = [
-    { 
-      id: 1, 
-      name: "Morning", 
-      maxCapacity: 5,
-      currentCapacity: 3,
-      medications: [
-        { id: 1, name: "Metformin", dosage: "500mg", count: 3, time: "8:00 AM" }
-      ]
-    },
-    { 
-      id: 2, 
-      name: "Lunch", 
-      maxCapacity: 5,
-      currentCapacity: 1,
-      medications: [
-        { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "1:00 PM" }
-      ]
-    },
-    { 
-      id: 3, 
-      name: "Evening", 
-      maxCapacity: 5,
-      currentCapacity: 1,
-      medications: [
-        { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" }
-      ]
-    },
-  ],
 }: DeviceStatusCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const [configureMode, setConfigureMode] = useState(false);
@@ -90,10 +60,74 @@ const DeviceStatusCard = ({
       setDeviceMode(savedMode);
     }
   }, []);
-  
-  const handleChangeMode = () => {
-    navigate("/setup");
+
+  const getCompartments = () => {
+    if (deviceMode === "daily") {
+      return [
+        { 
+          id: 1, 
+          name: "Morning", 
+          maxCapacity: 5,
+          currentCapacity: 2,
+          medications: [
+            { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "8:00 AM" },
+            { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+          ]
+        },
+        { 
+          id: 2, 
+          name: "Lunch", 
+          maxCapacity: 5,
+          currentCapacity: 1,
+          medications: [
+            { id: 3, name: "Metformin", dosage: "500mg", count: 1, time: "1:00 PM" }
+          ]
+        },
+        { 
+          id: 3, 
+          name: "Evening", 
+          maxCapacity: 5,
+          currentCapacity: 1,
+          medications: [
+            { id: 4, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" }
+          ]
+        }
+      ];
+    } else {
+      return [
+        { 
+          id: 1, 
+          name: "Morning (3-Day Supply)", 
+          maxCapacity: 5,
+          currentCapacity: 4,
+          medications: [
+            { id: 1, name: "Metformin", dosage: "500mg", count: 3, time: "8:00 AM (3 days)" },
+            { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM (3 days)" }
+          ]
+        },
+        { 
+          id: 2, 
+          name: "Lunch (3-Day Supply)", 
+          maxCapacity: 5,
+          currentCapacity: 3,
+          medications: [
+            { id: 3, name: "Metformin", dosage: "500mg", count: 3, time: "1:00 PM (3 days)" }
+          ]
+        },
+        { 
+          id: 3, 
+          name: "Evening (3-Day Supply)", 
+          maxCapacity: 5,
+          currentCapacity: 3,
+          medications: [
+            { id: 4, name: "Metformin", dosage: "500mg", count: 3, time: "7:00 PM (3 days)" }
+          ]
+        }
+      ];
+    }
   };
+  
+  const compartments = getCompartments();
 
   const getBatteryIcon = (level: number) => {
     if (level <= 20) {
@@ -166,13 +200,15 @@ const DeviceStatusCard = ({
                   variant="ghost" 
                   size="sm" 
                   className="ml-2 h-6 text-xs"
-                  onClick={handleChangeMode}
+                  onClick={() => navigate("/setup")}
                 >
                   Change
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Started on: {new Date(startDate).toLocaleDateString()}
+                {deviceMode === "daily" 
+                  ? "Refill compartments daily" 
+                  : "Each compartment holds a 3-day supply"}
               </p>
             </div>
           </div>
