@@ -1,4 +1,3 @@
-
 // Types
 export interface Medication {
   id: string;
@@ -56,7 +55,7 @@ export const medications: Medication[] = [
     name: "Lisinopril",
     dosage: "10mg",
     frequency: "Once daily",
-    times: ["20:00"],
+    times: ["08:00"],
     instructions: "Take with or without food",
     startDate: "2023-02-10",
   },
@@ -248,6 +247,16 @@ export function getNextMedication(): Medication | null {
   const currentMinutes = now.getMinutes();
   const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
   
+  // First check for Metformin as it's the primary medication in the titration schedule
+  const metformin = medications.find(med => med.name === "Metformin");
+  if (metformin) {
+    const nextMetforminTime = metformin.times.find(time => time > currentTimeStr);
+    if (nextMetforminTime) {
+      return metformin;
+    }
+  }
+  
+  // If no next Metformin dose, check other medications
   let closestMed: Medication | null = null;
   let closestTime: string | null = null;
   

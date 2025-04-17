@@ -60,7 +60,11 @@ const NextMedicationCard = ({
               <div className="w-full flex items-center justify-between p-3 bg-background rounded-md border">
                 <div className="flex items-center">
                   <CheckCircle2 className="h-5 w-5 text-muted-foreground mr-2" />
-                  <span className="text-sm text-muted-foreground">Previous: Taken at 8:00 AM</span>
+                  <span className="text-sm text-muted-foreground">
+                    {nextMed.name === "Metformin" 
+                      ? "Previous: Taken at 8:00 AM" 
+                      : `Previous: ${nextMed.name} taken at 8:00 AM`}
+                  </span>
                 </div>
                 <div className="flex items-center text-primary" onClick={handleView}>
                   <span className="text-sm mr-1">Details</span>
