@@ -99,11 +99,19 @@ const Medications = () => {
         return [
           { 
             id: 1, 
-            name: "Morning", 
+            name: "Morning - Metformin", 
             maxCapacity: 5,
-            currentCapacity: 5,
+            currentCapacity: 4,
             medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" }
+            ]
+          },
+          { 
+            id: 2, 
+            name: "Morning - Lisinopril", 
+            maxCapacity: 5,
+            currentCapacity: 1,
+            medications: [
               { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
             ]
           }
@@ -112,17 +120,25 @@ const Medications = () => {
         return [
           { 
             id: 1, 
-            name: "Morning", 
+            name: "Morning - Metformin", 
             maxCapacity: 5,
-            currentCapacity: 5,
+            currentCapacity: 4,
             medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
-              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" }
             ]
           },
           { 
             id: 2, 
-            name: "Evening", 
+            name: "Morning - Lisinopril", 
+            maxCapacity: 5,
+            currentCapacity: 1,
+            medications: [
+              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+            ]
+          },
+          { 
+            id: 3, 
+            name: "Evening - Metformin", 
             maxCapacity: 5,
             currentCapacity: 4,
             medications: [
@@ -135,17 +151,25 @@ const Medications = () => {
         return [
           { 
             id: 1, 
-            name: "Morning", 
+            name: "Morning - Metformin", 
             maxCapacity: 5,
-            currentCapacity: 5,
+            currentCapacity: 4,
             medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
-              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" }
             ]
           },
           { 
             id: 2, 
-            name: "Lunch", 
+            name: "Morning - Lisinopril", 
+            maxCapacity: 5,
+            currentCapacity: 1,
+            medications: [
+              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+            ]
+          },
+          { 
+            id: 3, 
+            name: "Lunch - Metformin", 
             maxCapacity: 5,
             currentCapacity: 4,
             medications: [
@@ -153,8 +177,8 @@ const Medications = () => {
             ]
           },
           { 
-            id: 3, 
-            name: "Evening", 
+            id: 4, 
+            name: "Evening - Metformin", 
             maxCapacity: 5,
             currentCapacity: 4,
             medications: [
@@ -404,10 +428,11 @@ const Medications = () => {
                   <div className="bg-yellow-50 p-3 rounded-md border border-yellow-100 mb-4">
                     <h4 className="text-sm font-medium text-yellow-800 flex items-center">
                       <AlertCircle className="h-4 w-4 mr-1" />
-                      Important: Capacity Limit
+                      Important Compartment Guidelines
                     </h4>
                     <p className="text-xs text-yellow-700 mt-1">
-                      Each compartment holds a maximum of 5 tablets. You may need to refill some compartments more frequently as your dosage increases.
+                      Each compartment has a maximum capacity of 5 tablets and should only contain one type of medication. 
+                      Do not mix different medications in the same compartment.
                     </p>
                   </div>
                   
@@ -416,9 +441,9 @@ const Medications = () => {
                     <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
                       <h5 className="text-sm font-medium text-blue-800">Current Compartment Setup</h5>
                       <p className="text-xs text-blue-700 mt-1">
-                        {currentWeek === 1 && "One daily dose: Configure the Morning compartment"}
-                        {currentWeek === 2 && "Two daily doses: Configure Morning and Evening compartments"}
-                        {currentWeek === 3 && "Three daily doses: Configure Morning, Lunch, and Evening compartments"}
+                        {currentWeek === 1 && "One daily dose: Configure separate compartments for Metformin and Lisinopril"}
+                        {currentWeek === 2 && "Two daily doses: Configure Morning Metformin, Morning Lisinopril, and Evening Metformin compartments"}
+                        {currentWeek === 3 && "Three daily doses: Configure separate compartments for each medication and time"}
                       </p>
                       <div className="mt-2 space-y-2">
                         {getCompartmentConfig().map((compartment, index) => (
@@ -445,7 +470,7 @@ const Medications = () => {
                       Initially 500 mg once daily for at least 1 week, dose to be taken with breakfast, then 500 mg twice daily for at least 1 week, dose to be taken with breakfast and evening meal, then 500 mg 3 times a day, dose to be taken with breakfast, lunch and evening meal.
                     </p>
                     <p className="text-xs text-blue-700 mt-1">
-                      Each compartment can hold up to 5 tablets. As your dosage increases, you'll need to refill the compartments more frequently.
+                      Each compartment can hold up to 5 tablets of a single medication type. As your dosage increases, you'll need more compartments and more frequent refills.
                     </p>
                   </div>
                 </div>
@@ -456,8 +481,18 @@ const Medications = () => {
           <TabsContent value="configure" className="mt-4 space-y-4">
             <h3 className="text-md font-medium">Configure Device Compartments</h3>
             <p className="text-sm text-muted-foreground">
-              Each compartment can hold up to 5 tablets. Adjust your medication distribution based on your current prescription schedule.
+              Each compartment can hold up to 5 tablets of a single medication type. Configure separate compartments for each medication.
             </p>
+            
+            <div className="bg-amber-50 p-3 rounded-md border border-amber-100">
+              <h4 className="text-sm font-medium text-amber-800 flex items-center">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                Important: One Medication Per Compartment
+              </h4>
+              <p className="text-xs text-amber-700 mt-1">
+                To prevent confusion when taking medications on future days, each compartment should only contain one type of medication.
+              </p>
+            </div>
             
             <DeviceStatusCard 
               compartments={getCompartmentConfig()} 

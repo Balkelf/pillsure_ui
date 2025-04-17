@@ -1,6 +1,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Battery, BatteryMedium, Box, Pill, CalendarDays, Clock, Settings, Plus, Minus } from "lucide-react";
+import { Battery, BatteryMedium, Box, Pill, CalendarDays, Clock, Settings, Plus, Minus, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface MedicationInCompartment {
   id: number;
@@ -49,11 +50,9 @@ const DeviceStatusCard = ({
       id: 1, 
       name: "Morning", 
       maxCapacity: 5,
-      currentCapacity: 5,
+      currentCapacity: 3,
       medications: [
-        { id: 1, name: "Metformin", dosage: "500mg", count: 3, time: "8:00 AM" },
-        { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" },
-        { id: 3, name: "Aspirin", dosage: "81mg", count: 1, time: "8:00 AM" }
+        { id: 1, name: "Metformin", dosage: "500mg", count: 3, time: "8:00 AM" }
       ]
     },
     { 
@@ -67,18 +66,29 @@ const DeviceStatusCard = ({
     },
     { 
       id: 3, 
-      name: "Dinner", 
+      name: "Evening", 
       maxCapacity: 5,
-      currentCapacity: 2,
+      currentCapacity: 1,
       medications: [
-        { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" },
-        { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "7:00 PM" }
+        { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" }
+      ]
+    },
+    { 
+      id: 4, 
+      name: "BP Med", 
+      maxCapacity: 5,
+      currentCapacity: 5,
+      medications: [
+        { id: 2, name: "Lisinopril", dosage: "10mg", count: 5, time: "8:00 AM" }
       ]
     },
   ],
 }: DeviceStatusCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const [configureMode, setConfigureMode] = useState(false);
+  const [selectedMedication, setSelectedMedication] = useState("metformin");
+  const [selectedCount, setSelectedCount] = useState("1");
+  const [selectedCompartment, setSelectedCompartment] = useState<number | null>(null);
   
   const getBatteryIcon = (level: number) => {
     if (level <= 20) {
@@ -103,6 +113,10 @@ const DeviceStatusCard = ({
     } else {
       setConfigureMode(!configureMode);
     }
+  };
+
+  const handleSelectCompartment = (compartmentId: number) => {
+    setSelectedCompartment(selectedCompartment === compartmentId ? null : compartmentId);
   };
 
   return (
@@ -151,7 +165,10 @@ const DeviceStatusCard = ({
             <h4 className="text-sm font-medium">Device Compartments</h4>
             {configureMode && (
               <div className="flex items-center gap-1">
-                <Select defaultValue="metformin">
+                <Select 
+                  value={selectedMedication} 
+                  onValueChange={setSelectedMedication}
+                >
                   <SelectTrigger className="h-7 text-xs">
                     <SelectValue placeholder="Select medication" />
                   </SelectTrigger>
@@ -161,7 +178,10 @@ const DeviceStatusCard = ({
                     <SelectItem value="aspirin">Aspirin 81mg</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select defaultValue="1">
+                <Select 
+                  value={selectedCount} 
+                  onValueChange={setSelectedCount}
+                >
                   <SelectTrigger className="h-7 w-16 text-xs">
                     <SelectValue placeholder="Count" />
                   </SelectTrigger>
@@ -177,12 +197,31 @@ const DeviceStatusCard = ({
             )}
           </div>
           
+          <div className="bg-amber-50 p-3 rounded-md border border-amber-100 mb-2">
+            <p className="text-xs text-amber-800 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+              Each compartment can only contain one type of medication to avoid confusion when taking tablets on future days.
+            </p>
+          </div>
+          
           {compartments.map((compartment) => (
-            <div key={compartment.id} className="border rounded-md p-3 space-y-2">
+            <div 
+              key={compartment.id} 
+              className={cn(
+                "border rounded-md p-3 space-y-2", 
+                selectedCompartment === compartment.id && "border-primary"
+              )}
+              onClick={configureMode ? () => handleSelectCompartment(compartment.id) : undefined}
+            >
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
                   <Pill className="h-4 w-4 mr-1 text-primary" />
                   <span className="font-medium">{compartment.name} Compartment</span>
+                  {compartment.medications.length > 0 && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      {compartment.medications[0].name}
+                    </Badge>
+                  )}
                 </div>
                 <span className="text-sm">
                   {compartment.currentCapacity}/{compartment.maxCapacity} tablets
@@ -203,12 +242,22 @@ const DeviceStatusCard = ({
                         <span className="text-xs text-muted-foreground">
                           {med.count} tablet{med.count > 1 ? 's' : ''}
                         </span>
-                        {configureMode && (
+                        {configureMode && selectedCompartment === compartment.id && (
                           <div className="flex items-center">
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6"
+                              disabled={med.count <= 1}
+                            >
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6"
+                              disabled={compartment.currentCapacity >= compartment.maxCapacity}
+                            >
                               <Plus className="h-3 w-3" />
                             </Button>
                           </div>
@@ -216,13 +265,6 @@ const DeviceStatusCard = ({
                       </div>
                     </div>
                   ))}
-                  
-                  {configureMode && (
-                    <Button variant="ghost" size="sm" className="text-xs mt-2">
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add medication
-                    </Button>
-                  )}
                 </div>
               )}
               
@@ -241,13 +283,20 @@ const DeviceStatusCard = ({
           ))}
           
           {configureMode && (
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" size="sm" onClick={() => setConfigureMode(false)}>
-                Cancel
+            <div className="mt-4">
+              <Button variant="outline" className="w-full" size="sm">
+                <Plus className="h-3 w-3 mr-1" />
+                Add new compartment
               </Button>
-              <Button size="sm" onClick={() => setConfigureMode(false)}>
-                Save Configuration
-              </Button>
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" size="sm" onClick={() => setConfigureMode(false)}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={() => setConfigureMode(false)}>
+                  Save Configuration
+                </Button>
+              </div>
             </div>
           )}
         </div>
