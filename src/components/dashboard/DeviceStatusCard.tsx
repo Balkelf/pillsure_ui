@@ -10,6 +10,7 @@ interface CompartmentStatus {
   pillCount: number;
   maxCapacity: number;
   pillType: string;
+  schedule?: string;
 }
 
 interface DeviceStatusCardProps {
@@ -24,9 +25,9 @@ const DeviceStatusCard = ({
   batteryLevel = 75,
   lastSync = "Today at 08:15 AM",
   compartments = [
-    { id: 1, name: "Morning", pillCount: 28, maxCapacity: 30, pillType: "Metformin" },
-    { id: 2, name: "Afternoon", pillCount: 14, maxCapacity: 30, pillType: "Lisinopril" },
-    { id: 3, name: "Evening", pillCount: 5, maxCapacity: 30, pillType: "Aspirin" },
+    { id: 1, name: "Compartment 1", schedule: "Morning", pillCount: 28, maxCapacity: 30, pillType: "Metformin" },
+    { id: 2, name: "Compartment 2", schedule: "Afternoon", pillCount: 14, maxCapacity: 30, pillType: "Lisinopril" },
+    { id: 3, name: "Compartment 3", schedule: "Evening", pillCount: 5, maxCapacity: 30, pillType: "Aspirin" },
   ],
 }: DeviceStatusCardProps) => {
   
@@ -56,7 +57,7 @@ const DeviceStatusCard = ({
               <Box className="h-5 w-5 text-secondary" />
             </div>
             <div>
-              <h3 className="font-medium">Pillsure Device</h3>
+              <h3 className="font-medium">PillSure Device</h3>
               <p className="text-sm text-muted-foreground">Last synced: {lastSync}</p>
             </div>
           </div>
@@ -67,25 +68,24 @@ const DeviceStatusCard = ({
         </div>
 
         <div className="space-y-3 mt-4">
-          <h4 className="text-sm font-medium">Compartment Status</h4>
+          <h4 className="text-sm font-medium">3-Compartment Status</h4>
           
           {compartments.map((compartment) => (
             <div key={compartment.id} className="space-y-1">
               <div className="flex justify-between text-sm">
                 <div className="flex items-center">
                   <Pill className="h-4 w-4 mr-1 text-primary" />
-                  <span>{compartment.name} - {compartment.pillType}</span>
+                  <span>{compartment.name} {compartment.schedule && `(${compartment.schedule})`} - {compartment.pillType}</span>
                 </div>
                 <span className="font-medium">
                   {compartment.pillCount}/{compartment.maxCapacity}
                 </span>
               </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className={cn("h-full", getCompartmentColorClass(compartment.pillCount, compartment.maxCapacity))}
-                  style={{ width: `${(compartment.pillCount / compartment.maxCapacity) * 100}%` }}
-                ></div>
-              </div>
+              <Progress
+                value={(compartment.pillCount / compartment.maxCapacity) * 100}
+                className="h-2"
+                indicatorClassName={getCompartmentColorClass(compartment.pillCount, compartment.maxCapacity)}
+              />
             </div>
           ))}
         </div>
