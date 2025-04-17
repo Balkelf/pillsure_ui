@@ -4,6 +4,8 @@ import { Switch } from "@/components/ui/switch";
 import { Clock, MapPin, Edit } from "lucide-react";
 import { SmartReminder } from "@/lib/types/reminders";
 import { Button } from "@/components/ui/button";
+import { scheduleReminder, cancelReminder } from "@/services/notifications";
+import { useToast } from "@/hooks/use-toast";
 
 interface SmartReminderCardProps {
   reminder: SmartReminder;
@@ -16,12 +18,32 @@ const SmartReminderCard = ({
   onToggle,
   onEdit
 }: SmartReminderCardProps) => {
-  const formatTime = (timeStr: string) => {
+  const { toast } = useToast();
+  
+  const formatTime = (timeStr?: string) => {
+    if (!timeStr) return '';
     const [hours, minutes] = timeStr.split(':');
     const hour = parseInt(hours);
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const handleToggle = async (id: string, active: boolean) => {
+    try {
+      if (active) {
+        await scheduleReminder(reminder);
+      } else {
+        await cancelReminder(id);
+      }
+      onToggle?.(id, active);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update notification settings. Please check your notification permissions.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -42,7 +64,9 @@ const SmartReminderCard = ({
               )}
             </div>
             <div>
-              <h3 className="font-medium">{reminder.smartType === 'location' ? reminder.location?.name : formatTime(reminder.time)}</h3>
+              <h3 className="font-medium">
+                {reminder.smartType === 'location' ? reminder.location?.name : formatTime(reminder.time)}
+              </h3>
               <div className="flex items-center gap-2">
                 {reminder.smartType === 'both' && (
                   <>
@@ -63,7 +87,7 @@ const SmartReminderCard = ({
           <div className="flex items-center gap-2">
             <Switch 
               checked={reminder.active} 
-              onCheckedChange={(checked) => onToggle?.(reminder.id, checked)} 
+              onCheckedChange={(checked) => handleToggle(reminder.id, checked)} 
             />
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit?.(reminder.id)}>
               <Edit className="h-4 w-4" />

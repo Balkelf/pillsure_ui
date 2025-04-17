@@ -1,5 +1,18 @@
 
-export interface SmartReminder extends Reminder {
+export interface Reminder {
+  id: string;
+  medicationId: string;
+  time: string;
+  active: boolean;
+  type: 'daily' | 'weekly';
+}
+
+export interface SmartReminder {
+  id: string;
+  medicationId: string;
+  time?: string;
+  active: boolean;
+  type: 'daily' | 'weekly';
   location?: {
     name: string;
     latitude: number;
