@@ -1,24 +1,20 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clock } from "lucide-react";
+import { Clock, CheckCircle2, ArrowRight } from "lucide-react";
 import { getNextMedication } from "@/lib/data";
 import { useState } from "react";
-import { toast } from "@/components/ui/use-toast";
 
 interface NextMedicationCardProps {
   className?: string;
-  onTake?: () => void;
-  onSkip?: () => void;
+  onView?: () => void;
 }
 
 const NextMedicationCard = ({ 
   className,
-  onTake,
-  onSkip 
+  onView 
 }: NextMedicationCardProps) => {
   const nextMed = getNextMedication();
-  const [taken, setTaken] = useState(false);
+  const [viewed, setViewed] = useState(false);
   
   if (!nextMed) {
     return (
@@ -32,23 +28,9 @@ const NextMedicationCard = ({
     );
   }
 
-  const handleTake = () => {
-    setTaken(true);
-    toast({
-      title: "Medication taken",
-      description: `You've taken ${nextMed.name} (${nextMed.dosage})`,
-    });
-    if (onTake) onTake();
-  };
-
-  const handleSkip = () => {
-    setTaken(true);
-    toast({
-      title: "Medication skipped",
-      description: `You've skipped ${nextMed.name} (${nextMed.dosage})`,
-      variant: "destructive",
-    });
-    if (onSkip) onSkip();
+  const handleView = () => {
+    setViewed(true);
+    if (onView) onView();
   };
 
   const formatTime = (timeStr: string) => {
@@ -62,7 +44,7 @@ const NextMedicationCard = ({
   return (
     <Card className={`bg-primary/5 border-0 ${className}`}>
       <CardContent className="p-4">
-        {!taken ? (
+        {!viewed ? (
           <>
             <div className="flex justify-between items-center">
               <div>
@@ -74,14 +56,22 @@ const NextMedicationCard = ({
                 {formatTime(nextMed.times[0])}
               </div>
             </div>
-            <div className="mt-3 flex gap-2">
-              <Button className="w-full" onClick={handleTake}>Take now</Button>
-              <Button variant="outline" className="w-full" onClick={handleSkip}>Skip</Button>
+            <div className="mt-3">
+              <div className="w-full flex items-center justify-between p-3 bg-background rounded-md border">
+                <div className="flex items-center">
+                  <CheckCircle2 className="h-5 w-5 text-muted-foreground mr-2" />
+                  <span className="text-sm text-muted-foreground">Previous: Taken at 8:00 AM</span>
+                </div>
+                <div className="flex items-center text-primary" onClick={handleView}>
+                  <span className="text-sm mr-1">Details</span>
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </div>
             </div>
           </>
         ) : (
           <div className="flex justify-center items-center py-4">
-            <p className="text-muted-foreground">Next medication updated</p>
+            <p className="text-muted-foreground">Medication details viewed</p>
           </div>
         )}
       </CardContent>

@@ -1,8 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Clock, Edit } from "lucide-react";
+import { Clock, Edit, CheckCircle2, AlertCircle } from "lucide-react";
 import { Reminder, medications } from "@/lib/data";
 
 interface PillReminderCardProps {
@@ -38,6 +37,21 @@ const PillReminderCard = ({
     }
   };
 
+  // Mock status - in a real app, this would come from the device data
+  const getStatus = () => {
+    const now = new Date();
+    const [hours, minutes] = reminder.time.split(':');
+    const reminderTime = new Date();
+    reminderTime.setHours(parseInt(hours), parseInt(minutes), 0);
+    
+    if (now > reminderTime) {
+      return "taken"; // Past time, assume taken
+    }
+    return "upcoming"; // Future time
+  };
+
+  const status = getStatus();
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -48,14 +62,27 @@ const PillReminderCard = ({
             </div>
             <div>
               <h3 className="font-medium">{medication?.name || 'Medication'}</h3>
-              <p className="text-sm text-muted-foreground">{formatTime(reminder.time)}</p>
+              <div className="flex items-center">
+                <p className="text-sm text-muted-foreground">{formatTime(reminder.time)}</p>
+                {status === "taken" ? (
+                  <div className="ml-2 flex items-center text-green-600">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Taken</span>
+                  </div>
+                ) : (
+                  <div className="ml-2 flex items-center text-amber-600">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Upcoming</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={reminder.active} onCheckedChange={handleToggle} />
-            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleEdit}>
+            <button className="h-8 w-8 p-0 flex items-center justify-center rounded-full hover:bg-muted" onClick={handleEdit}>
               <Edit className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
       </CardContent>
