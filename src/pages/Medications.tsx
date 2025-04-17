@@ -99,19 +99,11 @@ const Medications = () => {
         return [
           { 
             id: 1, 
-            name: "Morning - Metformin", 
+            name: "Morning", 
             maxCapacity: 5,
-            currentCapacity: 4,
+            currentCapacity: 5,
             medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" }
-            ]
-          },
-          { 
-            id: 2, 
-            name: "Morning - Lisinopril", 
-            maxCapacity: 5,
-            currentCapacity: 1,
-            medications: [
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
               { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
             ]
           }
@@ -120,29 +112,21 @@ const Medications = () => {
         return [
           { 
             id: 1, 
-            name: "Morning - Metformin", 
+            name: "Morning", 
             maxCapacity: 5,
-            currentCapacity: 4,
+            currentCapacity: 5,
             medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" }
-            ]
-          },
-          { 
-            id: 2, 
-            name: "Morning - Lisinopril", 
-            maxCapacity: 5,
-            currentCapacity: 1,
-            medications: [
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
               { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
             ]
           },
           { 
-            id: 3, 
-            name: "Evening - Metformin", 
+            id: 2, 
+            name: "Evening", 
             maxCapacity: 5,
             currentCapacity: 4,
             medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "7:00 PM" }
+              { id: 3, name: "Metformin", dosage: "500mg", count: 4, time: "7:00 PM" }
             ]
           }
         ];
@@ -151,38 +135,30 @@ const Medications = () => {
         return [
           { 
             id: 1, 
-            name: "Morning - Metformin", 
+            name: "Morning", 
             maxCapacity: 5,
-            currentCapacity: 4,
+            currentCapacity: 5,
             medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" }
-            ]
-          },
-          { 
-            id: 2, 
-            name: "Morning - Lisinopril", 
-            maxCapacity: 5,
-            currentCapacity: 1,
-            medications: [
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
               { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
             ]
           },
           { 
-            id: 3, 
-            name: "Lunch - Metformin", 
+            id: 2, 
+            name: "Lunch", 
             maxCapacity: 5,
             currentCapacity: 4,
             medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "1:00 PM" }
+              { id: 3, name: "Metformin", dosage: "500mg", count: 4, time: "1:00 PM" }
             ]
           },
           { 
-            id: 4, 
-            name: "Evening - Metformin", 
+            id: 3, 
+            name: "Evening", 
             maxCapacity: 5,
             currentCapacity: 4,
             medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "7:00 PM" }
+              { id: 4, name: "Metformin", dosage: "500mg", count: 4, time: "7:00 PM" }
             ]
           }
         ];

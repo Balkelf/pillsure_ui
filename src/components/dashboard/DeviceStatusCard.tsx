@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Battery, BatteryMedium, Box, Pill, CalendarDays, Clock, Settings, Plus, Minus, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -71,15 +70,6 @@ const DeviceStatusCard = ({
       currentCapacity: 1,
       medications: [
         { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" }
-      ]
-    },
-    { 
-      id: 4, 
-      name: "BP Med", 
-      maxCapacity: 5,
-      currentCapacity: 5,
-      medications: [
-        { id: 2, name: "Lisinopril", dosage: "10mg", count: 5, time: "8:00 AM" }
       ]
     },
   ],
