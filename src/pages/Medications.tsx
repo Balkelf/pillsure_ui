@@ -1,8 +1,9 @@
+
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Check, AlertCircle, Info, Calendar, FileText, PillIcon } from "lucide-react";
+import { Clock, Check, AlertCircle, Info, Calendar, FileText, PillIcon, Bell } from "lucide-react";
 import { useState } from "react";
 import { format, addDays, isAfter, isBefore, parseISO } from "date-fns";
 
@@ -75,7 +76,8 @@ const Medications = () => {
       status: "upcoming",
       week: 1,
       notes: "Take with breakfast for the first week",
-      compartment: "Compartment 1"
+      compartment: "Compartment 1",
+      refillFrequency: "Refill every 5 days"
     },
     {
       id: 2,
@@ -86,7 +88,8 @@ const Medications = () => {
       status: "upcoming",
       week: 2,
       notes: "Take with breakfast and evening meal for the second week",
-      compartment: "Compartment 2"
+      compartment: "Compartment 2",
+      refillFrequency: "Refill every 2-3 days"
     },
     {
       id: 3,
@@ -97,7 +100,8 @@ const Medications = () => {
       status: "upcoming",
       week: 3,
       notes: "Take with breakfast, lunch and evening meal starting from the third week",
-      compartment: "Compartment 3"
+      compartment: "Compartment 3",
+      refillFrequency: "Refill every 1-2 days"
     },
   ];
   
@@ -273,9 +277,15 @@ const Medications = () => {
                       {med.notes && (
                         <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
                       )}
-                      <p className="text-xs text-primary mt-1">
-                        {med.compartment} in your PillSure device
-                      </p>
+                      <div className="flex items-center text-xs text-primary mt-1">
+                        <div className="flex-1">
+                          {med.compartment} in your PillSure device
+                        </div>
+                        <div className="flex items-center">
+                          <Bell className="h-3 w-3 mr-1" />
+                          {med.refillFrequency}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -319,6 +329,16 @@ const Medications = () => {
                 </div>
                 
                 <div className="space-y-4">
+                  <div className="bg-yellow-50 p-3 rounded-md border border-yellow-100 mb-4">
+                    <h4 className="text-sm font-medium text-yellow-800 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      Important: Capacity Limit
+                    </h4>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Each compartment holds a maximum of 5 tablets. Please follow the refill schedule below.
+                    </p>
+                  </div>
+                  
                   {metforminSchedule.map((med) => (
                     <div key={med.id} className="flex gap-3">
                       <div className="bg-gray-100 rounded-full h-7 w-7 flex items-center justify-center text-sm font-medium text-gray-700">
@@ -329,10 +349,14 @@ const Medications = () => {
                           {med.compartment}
                         </h4>
                         <p className="text-sm">
-                          Fill with {med.week === 1 ? '7' : med.week === 2 ? '14' : '21'} tablets of Metformin {med.dosage}
+                          Fill with 5 tablets of Metformin {med.dosage}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           For {med.frequency.toLowerCase()} ({med.times.length} per day)
+                        </p>
+                        <p className="text-xs text-primary mt-1">
+                          <Bell className="h-3 w-3 inline mr-1" />
+                          {med.refillFrequency}
                         </p>
                       </div>
                     </div>
@@ -350,6 +374,14 @@ const Medications = () => {
                   <p className="text-xs text-blue-700 mt-1">
                     Dose can be increased if necessary up to maximum 2 g per day.
                   </p>
+                  <p className="text-xs font-medium text-blue-800 mt-2">
+                    Device Features:
+                  </p>
+                  <ul className="text-xs text-blue-700 list-disc ml-4 mt-1">
+                    <li>Lid sensors detect when medication is taken</li>
+                    <li>Alarm/buzzer reminds you when it's time for your medication</li>
+                    <li>Vibration alerts provide discreet reminders</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>

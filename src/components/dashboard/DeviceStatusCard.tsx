@@ -34,31 +34,31 @@ const DeviceStatusCard = ({
       id: 1, 
       name: "Compartment 1", 
       schedule: "Week 1", 
-      pillCount: 7, 
-      maxCapacity: 7, 
+      pillCount: 5, 
+      maxCapacity: 5, 
       pillType: "Metformin 500mg", 
       description: "Once daily with breakfast",
-      instructions: "Fill with 7 tablets (500mg) for week 1"
+      instructions: "Fill with 5 tablets (500mg) for week 1"
     },
     { 
       id: 2, 
       name: "Compartment 2", 
       schedule: "Week 2", 
-      pillCount: 14, 
-      maxCapacity: 14, 
+      pillCount: 5, 
+      maxCapacity: 5, 
       pillType: "Metformin 500mg", 
       description: "Twice daily with breakfast & dinner",
-      instructions: "Fill with 14 tablets (500mg) for week 2" 
+      instructions: "Fill with 5 tablets (500mg). Refill when empty (2-3 days)." 
     },
     { 
       id: 3, 
       name: "Compartment 3", 
-      schedule: "Week 3", 
-      pillCount: 21, 
-      maxCapacity: 21, 
+      schedule: "Week 3+", 
+      pillCount: 5, 
+      maxCapacity: 5, 
       pillType: "Metformin 500mg", 
       description: "Three times daily with each meal",
-      instructions: "Fill with 21 tablets (500mg) for week 3" 
+      instructions: "Fill with 5 tablets (500mg). Refill frequently (1-2 days)." 
     },
   ],
 }: DeviceStatusCardProps) => {
