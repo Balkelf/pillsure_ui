@@ -1,19 +1,50 @@
-
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Clock, Volume2, Smartphone, Edit, Plus, CalendarClock, CalendarDays } from "lucide-react";
+import { Bell, Clock, Volume2, Smartphone, Edit, Plus, CalendarClock, CalendarDays, MapPin } from "lucide-react";
 import { reminders } from "@/lib/data";
 import { useState, useEffect } from "react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import PillReminderCard from "@/components/reminders/PillReminderCard";
+import SmartReminderCard from "@/components/reminders/SmartReminderCard";
+import { SmartReminder } from "@/lib/types/reminders";
 
 const Reminders = () => {
   const [activeReminders, setActiveReminders] = useState(reminders);
   const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
-  
+  const [smartReminders] = useState<SmartReminder[]>([
+    {
+      id: "smart1",
+      medicationId: "med1",
+      time: "08:00",
+      active: true,
+      type: "daily",
+      smartType: "both",
+      location: {
+        name: "Home",
+        latitude: 37.7749,
+        longitude: -122.4194,
+        radius: 100
+      }
+    },
+    {
+      id: "smart2",
+      medicationId: "med2",
+      time: "20:00",
+      active: true,
+      type: "daily",
+      smartType: "location",
+      location: {
+        name: "Office",
+        latitude: 37.7833,
+        longitude: -122.4167,
+        radius: 100
+      }
+    }
+  ]);
+
   useEffect(() => {
     const savedMode = localStorage.getItem("pillsureMode") as "daily" | "multiday" | null;
     if (savedMode) {
@@ -21,7 +52,6 @@ const Reminders = () => {
     }
   }, []);
 
-  // Mock notification settings
   const notificationSettings = [
     {
       id: "sound",
@@ -95,6 +125,33 @@ const Reminders = () => {
           
           <TabsContent value="schedules" className="mt-4 space-y-4">
             <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Smart reminders</h2>
+              <Button size="sm" variant="ghost" className="gap-1">
+                <Plus className="h-4 w-4" />
+                Add
+              </Button>
+            </div>
+            
+            {smartReminders.map((reminder) => (
+              <SmartReminderCard 
+                key={reminder.id} 
+                reminder={reminder}
+                onToggle={(id, active) => {
+                  toast({
+                    title: active ? "Smart reminder activated" : "Smart reminder deactivated",
+                    description: `The smart reminder has been ${active ? 'activated' : 'deactivated'}`
+                  });
+                }}
+                onEdit={(id) => {
+                  toast({
+                    title: "Edit smart reminder",
+                    description: "Smart reminder editing functionality coming soon"
+                  });
+                }}
+              />
+            ))}
+
+            <div className="flex justify-between items-center mt-6">
               <h2 className="text-lg font-semibold">Daily reminders</h2>
               <Button size="sm" variant="ghost" className="gap-1">
                 <Plus className="h-4 w-4" />
@@ -126,7 +183,6 @@ const Reminders = () => {
               />
             ))}
             
-            {/* Special Refill Reminder based on device mode */}
             <Card className="border-primary/20">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -164,7 +220,16 @@ const Reminders = () => {
                 <CardTitle className="text-lg">Notification preferences</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {notificationSettings.map((setting) => (
+                {[
+                  {
+                    id: "location",
+                    icon: MapPin,
+                    title: "Location alerts",
+                    description: "Get reminders based on your location",
+                    enabled: true,
+                  },
+                  ...notificationSettings
+                ].map((setting) => (
                   <div key={setting.id} className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="bg-primary/10 p-2 rounded-full mr-3">
