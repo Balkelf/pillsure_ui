@@ -6,10 +6,12 @@ import { Clock, Check, AlertCircle, Info, Calendar, FileText, PillIcon, Bell, Se
 import { useState } from "react";
 import { format, addDays } from "date-fns";
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const Medications = () => {
   const startDate = "2023-04-10"; // Would come from user settings in a real app
   const [currentTab, setCurrentTab] = useState("today");
+  const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
   
   // Calculate the current week in the titration schedule
   const calculateCurrentWeek = () => {
@@ -92,76 +94,148 @@ const Medications = () => {
     }
   };
 
-  // Device compartment configurations for each stage
+  // Device compartment configurations based on mode and week
   const getCompartmentConfig = () => {
-    switch(currentWeek) {
-      case 1:
-        return [
-          { 
-            id: 1, 
-            name: "Morning", 
-            maxCapacity: 5,
-            currentCapacity: 5,
-            medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
-              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
-            ]
-          }
-        ];
-      case 2:
-        return [
-          { 
-            id: 1, 
-            name: "Morning", 
-            maxCapacity: 5,
-            currentCapacity: 5,
-            medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
-              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
-            ]
-          },
-          { 
-            id: 2, 
-            name: "Evening", 
-            maxCapacity: 5,
-            currentCapacity: 4,
-            medications: [
-              { id: 3, name: "Metformin", dosage: "500mg", count: 4, time: "7:00 PM" }
-            ]
-          }
-        ];
-      case 3:
-      default:
-        return [
-          { 
-            id: 1, 
-            name: "Morning", 
-            maxCapacity: 5,
-            currentCapacity: 5,
-            medications: [
-              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
-              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
-            ]
-          },
-          { 
-            id: 2, 
-            name: "Lunch", 
-            maxCapacity: 5,
-            currentCapacity: 4,
-            medications: [
-              { id: 3, name: "Metformin", dosage: "500mg", count: 4, time: "1:00 PM" }
-            ]
-          },
-          { 
-            id: 3, 
-            name: "Evening", 
-            maxCapacity: 5,
-            currentCapacity: 4,
-            medications: [
-              { id: 4, name: "Metformin", dosage: "500mg", count: 4, time: "7:00 PM" }
-            ]
-          }
-        ];
+    if (deviceMode === "daily") {
+      switch(currentWeek) {
+        case 1:
+          return [
+            { 
+              id: 1, 
+              name: "Morning", 
+              maxCapacity: 5,
+              currentCapacity: 5,
+              medications: [
+                { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "8:00 AM" },
+                { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+              ]
+            }
+          ];
+        case 2:
+          return [
+            { 
+              id: 1, 
+              name: "Morning", 
+              maxCapacity: 5,
+              currentCapacity: 5,
+              medications: [
+                { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "8:00 AM" },
+                { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+              ]
+            },
+            { 
+              id: 2, 
+              name: "Evening", 
+              maxCapacity: 5,
+              currentCapacity: 1,
+              medications: [
+                { id: 3, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" }
+              ]
+            }
+          ];
+        case 3:
+        default:
+          return [
+            { 
+              id: 1, 
+              name: "Morning", 
+              maxCapacity: 5,
+              currentCapacity: 5,
+              medications: [
+                { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "8:00 AM" },
+                { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+              ]
+            },
+            { 
+              id: 2, 
+              name: "Lunch", 
+              maxCapacity: 5,
+              currentCapacity: 1,
+              medications: [
+                { id: 3, name: "Metformin", dosage: "500mg", count: 1, time: "1:00 PM" }
+              ]
+            },
+            { 
+              id: 3, 
+              name: "Evening", 
+              maxCapacity: 5,
+              currentCapacity: 1,
+              medications: [
+                { id: 4, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" }
+              ]
+            }
+          ];
+      }
+    } else {
+      switch(currentWeek) {
+        case 1:
+          return [
+            { 
+              id: 1, 
+              name: "3-Day Supply (Morning)", 
+              maxCapacity: 5,
+              currentCapacity: 5,
+              medications: [
+                { id: 1, name: "Metformin", dosage: "500mg", count: 3, time: "8:00 AM (3 days)" },
+                { id: 2, name: "Lisinopril", dosage: "10mg", count: 3, time: "8:00 AM (3 days)" }
+              ]
+            }
+          ];
+        case 2:
+          return [
+            { 
+              id: 1, 
+              name: "3-Day Supply (Morning)", 
+              maxCapacity: 5,
+              currentCapacity: 5,
+              medications: [
+                { id: 1, name: "Metformin", dosage: "500mg", count: 3, time: "8:00 AM (3 days)" },
+                { id: 2, name: "Lisinopril", dosage: "10mg", count: 3, time: "8:00 AM (3 days)" }
+              ]
+            },
+            { 
+              id: 2, 
+              name: "3-Day Supply (Evening)", 
+              maxCapacity: 5,
+              currentCapacity: 3,
+              medications: [
+                { id: 3, name: "Metformin", dosage: "500mg", count: 3, time: "7:00 PM (3 days)" }
+              ]
+            }
+          ];
+        case 3:
+        default:
+          return [
+            { 
+              id: 1, 
+              name: "3-Day Supply (Morning)", 
+              maxCapacity: 5,
+              currentCapacity: 5,
+              medications: [
+                { id: 1, name: "Metformin", dosage: "500mg", count: 3, time: "8:00 AM (3 days)" },
+                { id: 2, name: "Lisinopril", dosage: "10mg", count: 3, time: "8:00 AM (3 days)" }
+              ]
+            },
+            { 
+              id: 2, 
+              name: "3-Day Supply (Lunch)", 
+              maxCapacity: 5,
+              currentCapacity: 3,
+              medications: [
+                { id: 3, name: "Metformin", dosage: "500mg", count: 3, time: "1:00 PM (3 days)" }
+              ]
+            },
+            { 
+              id: 3, 
+              name: "3-Day Supply (Evening)", 
+              maxCapacity: 5,
+              currentCapacity: 3,
+              medications: [
+                { id: 4, name: "Metformin", dosage: "500mg", count: 3, time: "7:00 PM (3 days)" }
+              ]
+            }
+          ];
+      }
     }
   };
 
@@ -417,9 +491,12 @@ const Medications = () => {
                     <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
                       <h5 className="text-sm font-medium text-blue-800">Current Compartment Setup</h5>
                       <p className="text-xs text-blue-700 mt-1">
-                        {currentWeek === 1 && "One daily dose: Configure separate compartments for Metformin and Lisinopril"}
-                        {currentWeek === 2 && "Two daily doses: Configure Morning Metformin, Morning Lisinopril, and Evening Metformin compartments"}
-                        {currentWeek === 3 && "Three daily doses: Configure separate compartments for each medication and time"}
+                        {currentWeek === 1 && deviceMode === "daily" && "One daily dose: Configure the Morning compartment"}
+                        {currentWeek === 2 && deviceMode === "daily" && "Two daily doses: Configure Morning and Evening compartments"}
+                        {currentWeek === 3 && deviceMode === "daily" && "Three daily doses: Configure Morning, Lunch, and Evening compartments"}
+                        {currentWeek === 1 && deviceMode === "multiday" && "One daily dose: 3-day supply in the Morning compartment"}
+                        {currentWeek === 2 && deviceMode === "multiday" && "Two daily doses: 3-day supply in the Morning and Evening compartments"}
+                        {currentWeek === 3 && deviceMode === "multiday" && "Three daily doses: 3-day supply in the Morning, Lunch, and Evening compartments"}
                       </p>
                       <div className="mt-2 space-y-2">
                         {getCompartmentConfig().map((compartment, index) => (
@@ -460,6 +537,37 @@ const Medications = () => {
               Each compartment can hold up to 5 tablets of a single medication type. Configure separate compartments for each medication.
             </p>
             
+            <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mb-4">
+              <h4 className="text-sm font-medium text-blue-800">Device Mode</h4>
+              <p className="text-xs text-blue-700 mt-1 mb-3">
+                Select your preferred dispensing mode for your PillSure device
+              </p>
+              
+              <ToggleGroup 
+                type="single" 
+                value={deviceMode} 
+                onValueChange={(value) => {
+                  if (value) setDeviceMode(value as "daily" | "multiday");
+                }}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="daily" className="whitespace-nowrap">
+                  <span className="text-sm">Daily Dispensing</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="multiday" className="whitespace-nowrap">
+                  <span className="text-sm">3-Day Supply</span>
+                </ToggleGroupItem>
+              </ToggleGroup>
+              
+              <div className="mt-3 text-xs text-blue-700">
+                {deviceMode === "daily" ? (
+                  <p>Daily mode: Refill compartments each day for your daily medication needs.</p>
+                ) : (
+                  <p>3-Day mode: Each compartment holds a 3-day supply of medications. Less frequent refills required.</p>
+                )}
+              </div>
+            </div>
+            
             <div className="bg-amber-50 p-3 rounded-md border border-amber-100">
               <h4 className="text-sm font-medium text-amber-800 flex items-center">
                 <AlertCircle className="h-4 w-4 mr-1" />
@@ -480,9 +588,12 @@ const Medications = () => {
                 Refill Recommendations
               </h4>
               <p className="text-xs text-yellow-700 mt-1">
-                {currentWeek === 1 && "With one daily dose, you'll likely need to refill every 4-5 days."}
-                {currentWeek === 2 && "With two daily doses, you'll likely need to refill every 2-3 days."}
-                {currentWeek === 3 && "With three daily doses, you may need to refill daily or every other day."}
+                {deviceMode === "daily" && currentWeek === 1 && "With one daily dose, you'll likely need to refill every day."}
+                {deviceMode === "daily" && currentWeek === 2 && "With two daily doses, you'll likely need to refill every day."}
+                {deviceMode === "daily" && currentWeek === 3 && "With three daily doses, you'll need to refill daily."}
+                {deviceMode === "multiday" && currentWeek === 1 && "With one daily dose in 3-day mode, you'll need to refill every 3 days."}
+                {deviceMode === "multiday" && currentWeek === 2 && "With two daily doses in 3-day mode, you'll need to refill every 3 days."}
+                {deviceMode === "multiday" && currentWeek === 3 && "With three daily doses in 3-day mode, you'll need to refill every 3 days."}
               </p>
             </div>
           </TabsContent>
