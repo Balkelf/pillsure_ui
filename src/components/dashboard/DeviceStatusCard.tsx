@@ -11,6 +11,7 @@ interface CompartmentStatus {
   maxCapacity: number;
   pillType: string;
   schedule?: string;
+  description?: string;
 }
 
 interface DeviceStatusCardProps {
@@ -25,9 +26,33 @@ const DeviceStatusCard = ({
   batteryLevel = 75,
   lastSync = "Today at 08:15 AM",
   compartments = [
-    { id: 1, name: "Compartment 1", schedule: "Morning", pillCount: 28, maxCapacity: 30, pillType: "Metformin" },
-    { id: 2, name: "Compartment 2", schedule: "Afternoon", pillCount: 14, maxCapacity: 30, pillType: "Lisinopril" },
-    { id: 3, name: "Compartment 3", schedule: "Evening", pillCount: 5, maxCapacity: 30, pillType: "Aspirin" },
+    { 
+      id: 1, 
+      name: "Compartment 1", 
+      schedule: "Week 1", 
+      pillCount: 7, 
+      maxCapacity: 7, 
+      pillType: "Metformin 500mg", 
+      description: "Once daily after dinner" 
+    },
+    { 
+      id: 2, 
+      name: "Compartment 2", 
+      schedule: "Week 2", 
+      pillCount: 14, 
+      maxCapacity: 14, 
+      pillType: "Metformin 500mg", 
+      description: "Twice daily after breakfast & dinner" 
+    },
+    { 
+      id: 3, 
+      name: "Compartment 3", 
+      schedule: "Week 3", 
+      pillCount: 21, 
+      maxCapacity: 21, 
+      pillType: "Metformin 500mg", 
+      description: "Three times daily after each meal" 
+    },
   ],
 }: DeviceStatusCardProps) => {
   
@@ -68,19 +93,24 @@ const DeviceStatusCard = ({
         </div>
 
         <div className="space-y-3 mt-4">
-          <h4 className="text-sm font-medium">3-Compartment Status</h4>
+          <h4 className="text-sm font-medium">Metformin Titration Schedule</h4>
           
           {compartments.map((compartment) => (
             <div key={compartment.id} className="space-y-1">
               <div className="flex justify-between text-sm">
                 <div className="flex items-center">
                   <Pill className="h-4 w-4 mr-1 text-primary" />
-                  <span>{compartment.name} {compartment.schedule && `(${compartment.schedule})`} - {compartment.pillType}</span>
+                  <span>
+                    {compartment.name} ({compartment.schedule}) - {compartment.pillType}
+                  </span>
                 </div>
                 <span className="font-medium">
                   {compartment.pillCount}/{compartment.maxCapacity}
                 </span>
               </div>
+              {compartment.description && (
+                <p className="text-xs text-muted-foreground ml-5">{compartment.description}</p>
+              )}
               <Progress
                 value={(compartment.pillCount / compartment.maxCapacity) * 100}
                 className="h-2"

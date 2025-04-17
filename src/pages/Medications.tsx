@@ -3,42 +3,49 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Check, AlertCircle } from "lucide-react";
+import { Clock, Check, AlertCircle, Info } from "lucide-react";
 
 const Medications = () => {
-  // Mock medication data
+  // Metformin titration schedule data
   const medications = [
     {
       id: 1,
       name: "Metformin",
       dosage: "500mg",
-      frequency: "Twice daily",
-      times: ["8:00 AM", "2:00 PM"],
-      status: "taken",
+      frequency: "Once daily",
+      times: ["7:00 PM"],
+      status: "upcoming",
+      week: 1,
+      notes: "Take after dinner for the first week"
     },
     {
       id: 2,
+      name: "Metformin",
+      dosage: "500mg",
+      frequency: "Twice daily",
+      times: ["8:00 AM", "7:00 PM"],
+      status: "upcoming",
+      week: 2,
+      notes: "Take after breakfast and dinner for the second week"
+    },
+    {
+      id: 3,
+      name: "Metformin",
+      dosage: "500mg",
+      frequency: "Three times daily",
+      times: ["8:00 AM", "1:00 PM", "7:00 PM"],
+      status: "upcoming",
+      week: 3,
+      notes: "Take after each meal starting from the third week"
+    },
+    {
+      id: 4,
       name: "Lisinopril",
       dosage: "10mg",
       frequency: "Once daily",
       times: ["8:00 PM"],
       status: "upcoming",
-    },
-    {
-      id: 3,
-      name: "Aspirin",
-      dosage: "81mg",
-      frequency: "Once daily",
-      times: ["8:00 AM"],
-      status: "taken",
-    },
-    {
-      id: 4,
-      name: "Atorvastatin",
-      dosage: "20mg",
-      frequency: "Once daily",
-      times: ["8:00 PM"],
-      status: "upcoming",
+      notes: "For blood pressure management"
     },
   ];
 
@@ -63,6 +70,23 @@ const Medications = () => {
           <p className="text-muted-foreground">Manage your prescription schedule</p>
         </div>
 
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-blue-100 p-1 rounded-full">
+                <Info className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-blue-800">Metformin Titration</h3>
+                <p className="text-xs text-blue-700">
+                  Your Metformin schedule gradually increases over 3 weeks to help your body adjust to the medication.
+                  PillSure has sorted your doses into the 3 compartments.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="today">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="today">Today</TabsTrigger>
@@ -70,7 +94,7 @@ const Medications = () => {
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
           <TabsContent value="today" className="mt-4 space-y-4">
-            {medications.map((med) => (
+            {medications.filter(med => med.id === 1 || med.id === 4).map((med) => (
               <Card key={med.id} className="overflow-hidden">
                 <CardContent className="p-0">
                   <div className="flex items-center p-4">
@@ -78,10 +102,14 @@ const Medications = () => {
                       {getStatusIcon(med.status)}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium">{med.name}</h3>
+                      <h3 className="font-medium">{med.name} {med.dosage}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {med.dosage} · {med.frequency}
+                        {med.frequency}
+                        {med.week && ` • Week ${med.week}`}
                       </p>
+                      {med.notes && (
+                        <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
+                      )}
                     </div>
                     <div className="text-sm font-medium">
                       {med.times.join(", ")}
@@ -101,10 +129,48 @@ const Medications = () => {
               </Card>
             ))}
           </TabsContent>
-          <TabsContent value="schedule" className="mt-4">
-            <div className="flex justify-center items-center h-40 text-muted-foreground">
-              Weekly schedule will be shown here
-            </div>
+          <TabsContent value="schedule" className="mt-4 space-y-4">
+            <h3 className="text-md font-medium">Metformin Titration Schedule</h3>
+            {medications.filter(med => med.id <= 3).map((med) => (
+              <Card key={med.id} className={med.id === 1 ? "border-primary" : ""}>
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="bg-primary/10 p-2 rounded-full mr-3">
+                      <Clock className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium">
+                        Week {med.week}: {med.name} {med.dosage}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{med.frequency}</p>
+                      {med.notes && (
+                        <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            <h3 className="text-md font-medium mt-6">Other Medications</h3>
+            {medications.filter(med => med.id === 4).map((med) => (
+              <Card key={med.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="bg-primary/10 p-2 rounded-full mr-3">
+                      <Clock className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium">{med.name} {med.dosage}</h3>
+                      <p className="text-sm text-muted-foreground">{med.frequency}</p>
+                      {med.notes && (
+                        <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </TabsContent>
           <TabsContent value="history" className="mt-4">
             <div className="flex justify-center items-center h-40 text-muted-foreground">
