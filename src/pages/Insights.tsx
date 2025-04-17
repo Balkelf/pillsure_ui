@@ -12,14 +12,44 @@ import {
   Tooltip, 
   ResponsiveContainer,
   LineChart,
-  Line
+  Line,
+  ScatterChart,
+  Scatter,
+  ZAxis
 } from "recharts";
-import { ChevronLeft, ChevronRight, Calendar, TrendingUp, Award } from "lucide-react";
-import { getAdherenceByDay, getCurrentStreak, healthMetrics } from "@/lib/data";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Calendar, 
+  TrendingUp, 
+  Award, 
+  Activity, 
+  Heart 
+} from "lucide-react";
+import { 
+  getAdherenceByDay, 
+  getCurrentStreak, 
+  healthMetrics 
+} from "@/lib/data";
+import { getHealthData, getAdherenceImpactScore } from "@/services/healthConnect";
+import { useState, useEffect } from "react";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent 
+} from "@/components/ui/chart";
 
 const Insights = () => {
   // Get adherence data for chart
   const adherenceData = getAdherenceByDay();
+  const [healthActivityData, setHealthActivityData] = useState<any[]>([]);
+  const [correlationData, setCorrelationData] = useState<any[]>([]);
+
+  // Weekly average adherence
+  const weeklyAverage = adherenceData.reduce((sum, day) => sum + day.adherence, 0) / adherenceData.length;
+  
+  // Current streak
+  const currentStreak = getCurrentStreak();
 
   // Transform health metrics for the charts
   const healthData = healthMetrics.map(metric => {
@@ -58,11 +88,36 @@ const Insights = () => {
     return [...acc, curr];
   }, [] as any[]);
 
-  // Calculate weekly adherence average
-  const weeklyAverage = adherenceData.reduce((sum, day) => sum + day.adherence, 0) / adherenceData.length;
-  
-  // Get current streak
-  const currentStreak = getCurrentStreak();
+  // Generate health activity data on component mount
+  useEffect(() => {
+    // Generate daily step data for the last 7 days
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const activityData = days.map((day, index) => {
+      // Generate random steps that correlate somewhat with adherence data
+      const adherenceForDay = adherenceData[index]?.adherence || 50;
+      const baseSteps = 4000 + (adherenceForDay * 30);
+      const randomVariation = Math.floor(Math.random() * 2000) - 1000;
+      const steps = Math.max(500, baseSteps + randomVariation);
+      
+      return {
+        day,
+        steps,
+        adherence: adherenceForDay
+      };
+    });
+    
+    setHealthActivityData(activityData);
+    
+    // Generate correlation data between adherence and steps
+    const corrData = activityData.map(item => ({
+      adherence: item.adherence,
+      steps: item.steps,
+      day: item.day,
+      impactScore: getAdherenceImpactScore(item.adherence, item.steps)
+    }));
+    
+    setCorrelationData(corrData);
+  }, []);
 
   return (
     <MobileLayout>
@@ -73,9 +128,10 @@ const Insights = () => {
         </div>
 
         <Tabs defaultValue="adherence">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="adherence">Adherence</TabsTrigger>
             <TabsTrigger value="health">Health Data</TabsTrigger>
+            <TabsTrigger value="correlation">Correlation</TabsTrigger>
           </TabsList>
           
           <TabsContent value="adherence" className="mt-4 space-y-4">
@@ -138,6 +194,32 @@ const Insights = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
+                  <Activity className="mr-2 h-5 w-5 text-secondary" />
+                  Daily Step Count
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={healthActivityData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar 
+                        dataKey="steps" 
+                        fill="hsl(var(--secondary))" 
+                        radius={[4, 4, 0, 0]} 
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
                   <TrendingUp className="mr-2 h-5 w-5 text-primary" />
                   Blood Glucose Levels
                 </CardTitle>
@@ -188,6 +270,124 @@ const Insights = () => {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="correlation" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <Heart className="mr-2 h-5 w-5 text-red-500" />
+                  Medication + Activity Impact
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  The chart below shows how your physical activity correlates with your medication adherence,
+                  and the resulting health impact score.
+                </p>
+                <div className="h-64 w-full">
+                  <ChartContainer 
+                    className="w-full h-full" 
+                    config={{
+                      steps: { color: "hsl(var(--secondary))" },
+                      adherence: { color: "hsl(var(--primary))" },
+                      impactScore: { color: "hsl(var(--destructive))" }
+                    }}
+                  >
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                      <CartesianGrid />
+                      <XAxis 
+                        type="number" 
+                        dataKey="adherence" 
+                        name="Adherence" 
+                        unit="%" 
+                        domain={[0, 100]} 
+                        label={{ value: 'Adherence (%)', position: 'bottom', offset: 0 }}
+                      />
+                      <YAxis 
+                        type="number" 
+                        dataKey="steps" 
+                        name="Steps" 
+                        label={{ value: 'Steps', angle: -90, position: 'left' }}
+                      />
+                      <ZAxis 
+                        type="number" 
+                        dataKey="impactScore" 
+                        range={[60, 400]} 
+                        name="Impact Score" 
+                      />
+                      <ChartTooltip 
+                        cursor={{ strokeDasharray: '3 3' }}
+                        content={
+                          <ChartTooltipContent 
+                            formatter={(value, name) => {
+                              if (name === "impactScore") return [`${value} points`, "Impact Score"];
+                              if (name === "adherence") return [`${value}%`, "Adherence"];
+                              if (name === "steps") return [value, "Steps"];
+                              return [value, name];
+                            }}
+                          />
+                        }
+                      />
+                      <Scatter 
+                        name="Values" 
+                        data={correlationData} 
+                        fill="hsl(var(--primary))" 
+                      />
+                    </ScatterChart>
+                  </ChartContainer>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <div className="p-2 bg-primary/10 rounded-md">
+                    <p className="text-xs text-muted-foreground">Adherence</p>
+                    <p className="font-medium">{weeklyAverage.toFixed(0)}%</p>
+                  </div>
+                  <div className="p-2 bg-secondary/10 rounded-md">
+                    <p className="text-xs text-muted-foreground">Avg. Steps</p>
+                    <p className="font-medium">
+                      {Math.round(healthActivityData.reduce((sum, day) => sum + day.steps, 0) / healthActivityData.length).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="p-2 bg-red-100 rounded-md">
+                    <p className="text-xs text-muted-foreground">Impact Score</p>
+                    <p className="font-medium">
+                      {Math.round(correlationData.reduce((sum, day) => sum + day.impactScore, 0) / correlationData.length)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <TrendingUp className="mr-2 h-5 w-5 text-blue-500" />
+                  Daily Comparison
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={correlationData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis yAxisId="left" orientation="left" stroke="hsl(var(--primary))" />
+                      <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--secondary))" />
+                      <Tooltip />
+                      <Bar yAxisId="left" dataKey="adherence" fill="hsl(var(--primary))" name="Adherence %" />
+                      <Bar yAxisId="right" dataKey="impactScore" fill="hsl(var(--destructive))" name="Impact Score" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="text-sm text-muted-foreground mt-4">
+                  Higher medication adherence combined with regular physical activity leads to better health outcomes 
+                  and improved medication effectiveness. Aim for consistency in both areas.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
