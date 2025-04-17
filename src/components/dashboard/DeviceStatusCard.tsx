@@ -1,19 +1,32 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Battery, BatteryMedium, Box, Pill, CalendarDays, ClockIcon } from "lucide-react";
+import { Battery, BatteryMedium, Box, Pill, CalendarDays, Clock, Settings, Plus, Minus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+
+interface MedicationInCompartment {
+  id: number;
+  name: string;
+  dosage: string;
+  count: number;
+  time: string;
+}
 
 interface CompartmentStatus {
   id: number;
   name: string;
-  pillCount: number;
   maxCapacity: number;
-  pillType: string;
-  schedule?: string;
-  description?: string;
-  instructions?: string;
+  currentCapacity: number;
+  medications: MedicationInCompartment[];
 }
 
 interface DeviceStatusCardProps {
@@ -22,6 +35,7 @@ interface DeviceStatusCardProps {
   lastSync?: string;
   startDate?: string;
   compartments?: CompartmentStatus[];
+  onConfigureCompartments?: () => void;
 }
 
 const DeviceStatusCard = ({
@@ -29,40 +43,42 @@ const DeviceStatusCard = ({
   batteryLevel = 75,
   lastSync = "Today at 08:15 AM",
   startDate = "2023-04-10",
+  onConfigureCompartments,
   compartments = [
     { 
       id: 1, 
-      name: "Compartment 1", 
-      schedule: "Week 1", 
-      pillCount: 5, 
-      maxCapacity: 5, 
-      pillType: "Metformin 500mg", 
-      description: "Once daily with breakfast",
-      instructions: "Fill with 5 tablets (500mg) for week 1"
+      name: "Morning", 
+      maxCapacity: 5,
+      currentCapacity: 5,
+      medications: [
+        { id: 1, name: "Metformin", dosage: "500mg", count: 3, time: "8:00 AM" },
+        { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" },
+        { id: 3, name: "Aspirin", dosage: "81mg", count: 1, time: "8:00 AM" }
+      ]
     },
     { 
       id: 2, 
-      name: "Compartment 2", 
-      schedule: "Week 2", 
-      pillCount: 5, 
-      maxCapacity: 5, 
-      pillType: "Metformin 500mg", 
-      description: "Twice daily with breakfast & dinner",
-      instructions: "Fill with 5 tablets (500mg). Refill when empty (2-3 days)." 
+      name: "Lunch", 
+      maxCapacity: 5,
+      currentCapacity: 1,
+      medications: [
+        { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "1:00 PM" }
+      ]
     },
     { 
       id: 3, 
-      name: "Compartment 3", 
-      schedule: "Week 3+", 
-      pillCount: 5, 
-      maxCapacity: 5, 
-      pillType: "Metformin 500mg", 
-      description: "Three times daily with each meal",
-      instructions: "Fill with 5 tablets (500mg). Refill frequently (1-2 days)." 
+      name: "Dinner", 
+      maxCapacity: 5,
+      currentCapacity: 2,
+      medications: [
+        { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" },
+        { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "7:00 PM" }
+      ]
     },
   ],
 }: DeviceStatusCardProps) => {
-  const [showInstructions, setShowInstructions] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [configureMode, setConfigureMode] = useState(false);
   
   const getBatteryIcon = (level: number) => {
     if (level <= 20) {
@@ -74,26 +90,20 @@ const DeviceStatusCard = ({
     }
   };
 
-  const getCompartmentColorClass = (pillCount: number, maxCapacity: number) => {
-    const percentage = (pillCount / maxCapacity) * 100;
+  const getCompartmentColorClass = (currentCapacity: number, maxCapacity: number) => {
+    const percentage = (currentCapacity / maxCapacity) * 100;
     if (percentage <= 20) return "bg-red-500";
     if (percentage <= 50) return "bg-orange-400";
     return "bg-green-500";
   };
 
-  // Calculate current week based on start date
-  const calculateCurrentWeek = () => {
-    const start = new Date(startDate);
-    const today = new Date();
-    const diffTime = today.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays <= 7) return 1;
-    if (diffDays <= 14) return 2;
-    return 3;
+  const handleConfigureClick = () => {
+    if (onConfigureCompartments) {
+      onConfigureCompartments();
+    } else {
+      setConfigureMode(!configureMode);
+    }
   };
-
-  const currentWeek = calculateCurrentWeek();
 
   return (
     <Card className={cn("border-2 border-secondary/10 shadow-sm", className)}>
@@ -108,9 +118,14 @@ const DeviceStatusCard = ({
               <p className="text-sm text-muted-foreground">Last synced: {lastSync}</p>
             </div>
           </div>
-          <div className="flex items-center">
-            {getBatteryIcon(batteryLevel)}
-            <span className="ml-1 text-sm font-medium">{batteryLevel}%</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center">
+              {getBatteryIcon(batteryLevel)}
+              <span className="ml-1 text-sm font-medium">{batteryLevel}%</span>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleConfigureClick}>
+              <Settings className="h-5 w-5" />
+            </Button>
           </div>
         </div>
 
@@ -121,48 +136,120 @@ const DeviceStatusCard = ({
             </div>
             <div>
               <p className="text-sm">Started on: {new Date(startDate).toLocaleDateString()}</p>
-              <p className="text-sm font-medium text-primary">Currently in Week {currentWeek}</p>
             </div>
           </div>
           <button 
-            onClick={() => setShowInstructions(!showInstructions)} 
+            onClick={() => setShowDetails(!showDetails)} 
             className="text-sm text-primary hover:underline flex items-center"
           >
-            {showInstructions ? "Hide" : "Show"} filling instructions
+            {showDetails ? "Hide" : "Show"} details
           </button>
         </div>
 
         <div className="space-y-3 mt-4">
-          <h4 className="text-sm font-medium">Metformin Titration Schedule</h4>
+          <div className="flex justify-between items-center">
+            <h4 className="text-sm font-medium">Device Compartments</h4>
+            {configureMode && (
+              <div className="flex items-center gap-1">
+                <Select defaultValue="metformin">
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue placeholder="Select medication" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="metformin">Metformin 500mg</SelectItem>
+                    <SelectItem value="lisinopril">Lisinopril 10mg</SelectItem>
+                    <SelectItem value="aspirin">Aspirin 81mg</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select defaultValue="1">
+                  <SelectTrigger className="h-7 w-16 text-xs">
+                    <SelectValue placeholder="Count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
           
           {compartments.map((compartment) => (
-            <div key={compartment.id} className={`space-y-1 ${compartment.id === currentWeek ? 'bg-primary/5 p-3 rounded-md -mx-3' : ''}`}>
-              <div className="flex justify-between text-sm">
+            <div key={compartment.id} className="border rounded-md p-3 space-y-2">
+              <div className="flex justify-between items-center">
                 <div className="flex items-center">
                   <Pill className="h-4 w-4 mr-1 text-primary" />
-                  <span>
-                    {compartment.name} ({compartment.schedule}) - {compartment.pillType}
-                  </span>
+                  <span className="font-medium">{compartment.name} Compartment</span>
                 </div>
-                <span className="font-medium">
-                  {compartment.pillCount}/{compartment.maxCapacity}
+                <span className="text-sm">
+                  {compartment.currentCapacity}/{compartment.maxCapacity} tablets
                 </span>
               </div>
-              {compartment.description && (
-                <p className="text-xs text-muted-foreground ml-5">{compartment.description}</p>
+              
+              {showDetails && (
+                <div className="pl-5 space-y-1">
+                  {compartment.medications.map((med) => (
+                    <div key={med.id} className="flex justify-between items-center text-sm">
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
+                        <span>
+                          {med.name} {med.dosage} ({med.time})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {med.count} tablet{med.count > 1 ? 's' : ''}
+                        </span>
+                        {configureMode && (
+                          <div className="flex items-center">
+                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {configureMode && (
+                    <Button variant="ghost" size="sm" className="text-xs mt-2">
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add medication
+                    </Button>
+                  )}
+                </div>
               )}
-              {showInstructions && compartment.instructions && (
-                <p className="text-xs bg-blue-50 p-2 rounded border border-blue-100 text-blue-700 ml-5 mt-1">
-                  {compartment.instructions}
+              
+              <Progress
+                value={(compartment.currentCapacity / compartment.maxCapacity) * 100}
+                className="h-2"
+                indicatorClassName={getCompartmentColorClass(compartment.currentCapacity, compartment.maxCapacity)}
+              />
+              
+              {compartment.currentCapacity >= compartment.maxCapacity && (
+                <p className="text-xs text-orange-600">
+                  Compartment at max capacity (5 tablets)
                 </p>
               )}
-              <Progress
-                value={(compartment.pillCount / compartment.maxCapacity) * 100}
-                className="h-2"
-                indicatorClassName={getCompartmentColorClass(compartment.pillCount, compartment.maxCapacity)}
-              />
             </div>
           ))}
+          
+          {configureMode && (
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" size="sm" onClick={() => setConfigureMode(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={() => setConfigureMode(false)}>
+                Save Configuration
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

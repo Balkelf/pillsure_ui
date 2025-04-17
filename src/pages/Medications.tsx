@@ -1,11 +1,11 @@
-
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Check, AlertCircle, Info, Calendar, FileText, PillIcon, Bell } from "lucide-react";
+import { Clock, Check, AlertCircle, Info, Calendar, FileText, PillIcon, Bell, Settings } from "lucide-react";
 import { useState } from "react";
-import { format, addDays, isAfter, isBefore, parseISO } from "date-fns";
+import { format, addDays } from "date-fns";
+import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 
 const Medications = () => {
   const startDate = "2023-04-10"; // Would come from user settings in a real app
@@ -38,6 +38,15 @@ const Medications = () => {
           status: "upcoming",
           week: 1,
           notes: "Take with breakfast"
+        },
+        {
+          id: 4,
+          name: "Lisinopril",
+          dosage: "10mg",
+          frequency: "Once daily",
+          times: ["8:00 AM"],
+          status: "upcoming",
+          notes: "For blood pressure management"
         }];
       case 2:
         return [{
@@ -49,6 +58,15 @@ const Medications = () => {
           status: "upcoming",
           week: 2,
           notes: "Take with breakfast and evening meal"
+        },
+        {
+          id: 4,
+          name: "Lisinopril",
+          dosage: "10mg",
+          frequency: "Once daily",
+          times: ["8:00 AM"],
+          status: "upcoming",
+          notes: "For blood pressure management"
         }];
       case 3:
       default:
@@ -61,7 +79,89 @@ const Medications = () => {
           status: "upcoming",
           week: 3,
           notes: "Take with breakfast, lunch and evening meal starting from the third week"
+        },
+        {
+          id: 4,
+          name: "Lisinopril",
+          dosage: "10mg",
+          frequency: "Once daily",
+          times: ["8:00 AM"],
+          status: "upcoming",
+          notes: "For blood pressure management"
         }];
+    }
+  };
+
+  // Device compartment configurations for each stage
+  const getCompartmentConfig = () => {
+    switch(currentWeek) {
+      case 1:
+        return [
+          { 
+            id: 1, 
+            name: "Morning", 
+            maxCapacity: 5,
+            currentCapacity: 5,
+            medications: [
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
+              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+            ]
+          }
+        ];
+      case 2:
+        return [
+          { 
+            id: 1, 
+            name: "Morning", 
+            maxCapacity: 5,
+            currentCapacity: 5,
+            medications: [
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
+              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+            ]
+          },
+          { 
+            id: 2, 
+            name: "Evening", 
+            maxCapacity: 5,
+            currentCapacity: 4,
+            medications: [
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "7:00 PM" }
+            ]
+          }
+        ];
+      case 3:
+      default:
+        return [
+          { 
+            id: 1, 
+            name: "Morning", 
+            maxCapacity: 5,
+            currentCapacity: 5,
+            medications: [
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "8:00 AM" },
+              { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+            ]
+          },
+          { 
+            id: 2, 
+            name: "Lunch", 
+            maxCapacity: 5,
+            currentCapacity: 4,
+            medications: [
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "1:00 PM" }
+            ]
+          },
+          { 
+            id: 3, 
+            name: "Evening", 
+            maxCapacity: 5,
+            currentCapacity: 4,
+            medications: [
+              { id: 1, name: "Metformin", dosage: "500mg", count: 4, time: "7:00 PM" }
+            ]
+          }
+        ];
     }
   };
 
@@ -76,8 +176,8 @@ const Medications = () => {
       status: "upcoming",
       week: 1,
       notes: "Take with breakfast for the first week",
-      compartment: "Compartment 1",
-      refillFrequency: "Refill every 5 days"
+      compartment: "Morning Compartment",
+      refillFrequency: "May need to refill every 4-5 days"
     },
     {
       id: 2,
@@ -88,8 +188,8 @@ const Medications = () => {
       status: "upcoming",
       week: 2,
       notes: "Take with breakfast and evening meal for the second week",
-      compartment: "Compartment 2",
-      refillFrequency: "Refill every 2-3 days"
+      compartment: "Morning & Evening Compartments",
+      refillFrequency: "May need to refill every 2-3 days"
     },
     {
       id: 3,
@@ -100,8 +200,8 @@ const Medications = () => {
       status: "upcoming",
       week: 3,
       notes: "Take with breakfast, lunch and evening meal starting from the third week",
-      compartment: "Compartment 3",
-      refillFrequency: "Refill every 1-2 days"
+      compartment: "Morning, Lunch & Evening Compartments",
+      refillFrequency: "May need to refill every 1-2 days"
     },
   ];
   
@@ -112,9 +212,11 @@ const Medications = () => {
       name: "Lisinopril",
       dosage: "10mg",
       frequency: "Once daily",
-      times: ["8:00 PM"],
+      times: ["8:00 AM"],
       status: "upcoming",
-      notes: "For blood pressure management"
+      notes: "For blood pressure management",
+      compartment: "Morning Compartment",
+      refillFrequency: "Refill every 5 days (sharing compartment with Metformin)"
     },
   ];
 
@@ -140,6 +242,10 @@ const Medications = () => {
     return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
   };
 
+  const handleConfigureCompartments = () => {
+    setCurrentTab("configure");
+  };
+
   return (
     <MobileLayout>
       <div className="space-y-6">
@@ -158,7 +264,7 @@ const Medications = () => {
                 <h3 className="text-sm font-medium text-blue-800">Metformin Titration</h3>
                 <p className="text-xs text-blue-700">
                   Your Metformin schedule gradually increases over 3 weeks to help your body adjust to the medication.
-                  PillSure has sorted your doses into the 3 compartments of your device.
+                  Configure your PillSure device compartments to manage your dosage schedule.
                 </p>
                 <div className="mt-1 text-xs text-blue-700 flex items-center">
                   <Calendar className="h-3 w-3 mr-1" />
@@ -170,10 +276,11 @@ const Medications = () => {
         </Card>
 
         <Tabs defaultValue="today" onValueChange={setCurrentTab} value={currentTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="today">Today</TabsTrigger>
             <TabsTrigger value="schedule">Schedule</TabsTrigger>
             <TabsTrigger value="instructions">Instructions</TabsTrigger>
+            <TabsTrigger value="configure">Configure</TabsTrigger>
           </TabsList>
           
           <TabsContent value="today" className="mt-4 space-y-4">
@@ -189,41 +296,6 @@ const Medications = () => {
                       <p className="text-sm text-muted-foreground">
                         {med.frequency}
                         {med.week && ` • Week ${med.week}`}
-                      </p>
-                      {med.notes && (
-                        <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
-                      )}
-                    </div>
-                    <div className="text-sm font-medium">
-                      {med.times.join(", ")}
-                    </div>
-                  </div>
-                  {med.status === "upcoming" && (
-                    <div className="border-t px-4 py-3 flex gap-2">
-                      <Button size="sm" className="flex-1">
-                        Take now
-                      </Button>
-                      <Button size="sm" variant="outline" className="flex-1">
-                        Skip
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-            
-            {/* Display other medications that are not part of the titration */}
-            {otherMedications.map((med) => (
-              <Card key={med.id} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="flex items-center p-4">
-                    <div className="bg-primary/10 p-2 rounded-full mr-3">
-                      {getStatusIcon(med.status)}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">{med.name} {med.dosage}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {med.frequency}
                       </p>
                       {med.notes && (
                         <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
@@ -323,7 +395,7 @@ const Medications = () => {
                   <div>
                     <h3 className="font-medium">How to Fill Your PillSure Device</h3>
                     <p className="text-sm text-muted-foreground">
-                      Your PillSure device has 3 compartments for your Metformin titration schedule
+                      Your PillSure device has multiple compartments for your medication schedule
                     </p>
                   </div>
                 </div>
@@ -335,56 +407,73 @@ const Medications = () => {
                       Important: Capacity Limit
                     </h4>
                     <p className="text-xs text-yellow-700 mt-1">
-                      Each compartment holds a maximum of 5 tablets. Please follow the refill schedule below.
+                      Each compartment holds a maximum of 5 tablets. You may need to refill some compartments more frequently as your dosage increases.
                     </p>
                   </div>
                   
-                  {metforminSchedule.map((med) => (
-                    <div key={med.id} className="flex gap-3">
-                      <div className="bg-gray-100 rounded-full h-7 w-7 flex items-center justify-center text-sm font-medium text-gray-700">
-                        {med.week}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium">
-                          {med.compartment}
-                        </h4>
-                        <p className="text-sm">
-                          Fill with 5 tablets of Metformin {med.dosage}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          For {med.frequency.toLowerCase()} ({med.times.length} per day)
-                        </p>
-                        <p className="text-xs text-primary mt-1">
-                          <Bell className="h-3 w-3 inline mr-1" />
-                          {med.refillFrequency}
-                        </p>
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">Week {currentWeek} Configuration:</h4>
+                    <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                      <h5 className="text-sm font-medium text-blue-800">Current Compartment Setup</h5>
+                      <p className="text-xs text-blue-700 mt-1">
+                        {currentWeek === 1 && "One daily dose: Configure the Morning compartment"}
+                        {currentWeek === 2 && "Two daily doses: Configure Morning and Evening compartments"}
+                        {currentWeek === 3 && "Three daily doses: Configure Morning, Lunch, and Evening compartments"}
+                      </p>
+                      <div className="mt-2 space-y-2">
+                        {getCompartmentConfig().map((compartment, index) => (
+                          <div key={index} className="text-xs text-blue-800 flex items-center">
+                            <PillIcon className="h-3 w-3 mr-1" />
+                            <span className="font-medium">{compartment.name} Compartment:</span>
+                            <ul className="ml-2">
+                              {compartment.medications.map((med, i) => (
+                                <li key={i}>{med.count}x {med.name} {med.dosage}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-                
-                <div className="mt-6 bg-blue-50 p-3 rounded-md border border-blue-100">
-                  <h4 className="text-sm font-medium text-blue-800 flex items-center">
-                    <PillIcon className="h-4 w-4 mr-1" />
-                    Metformin Dosing Instructions
-                  </h4>
-                  <p className="text-xs text-blue-700 mt-1">
-                    Initially 500 mg once daily for at least 1 week, dose to be taken with breakfast, then 500 mg twice daily for at least 1 week, dose to be taken with breakfast and evening meal, then 500 mg 3 times a day, dose to be taken with breakfast, lunch and evening meal.
-                  </p>
-                  <p className="text-xs text-blue-700 mt-1">
-                    Dose can be increased if necessary up to maximum 2 g per day.
-                  </p>
-                  <p className="text-xs font-medium text-blue-800 mt-2">
-                    Device Features:
-                  </p>
-                  <ul className="text-xs text-blue-700 list-disc ml-4 mt-1">
-                    <li>Lid sensors detect when medication is taken</li>
-                    <li>Alarm/buzzer reminds you when it's time for your medication</li>
-                    <li>Vibration alerts provide discreet reminders</li>
-                  </ul>
+                  </div>
+                  
+                  <div className="mt-6 bg-blue-50 p-3 rounded-md border border-blue-100">
+                    <h4 className="text-sm font-medium text-blue-800 flex items-center">
+                      <PillIcon className="h-4 w-4 mr-1" />
+                      Metformin Dosing Instructions
+                    </h4>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Initially 500 mg once daily for at least 1 week, dose to be taken with breakfast, then 500 mg twice daily for at least 1 week, dose to be taken with breakfast and evening meal, then 500 mg 3 times a day, dose to be taken with breakfast, lunch and evening meal.
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Each compartment can hold up to 5 tablets. As your dosage increases, you'll need to refill the compartments more frequently.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="configure" className="mt-4 space-y-4">
+            <h3 className="text-md font-medium">Configure Device Compartments</h3>
+            <p className="text-sm text-muted-foreground">
+              Each compartment can hold up to 5 tablets. Adjust your medication distribution based on your current prescription schedule.
+            </p>
+            
+            <DeviceStatusCard 
+              compartments={getCompartmentConfig()} 
+            />
+            
+            <div className="bg-yellow-50 p-3 rounded-md border border-yellow-100 mt-4">
+              <h4 className="text-sm font-medium text-yellow-800 flex items-center">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                Refill Recommendations
+              </h4>
+              <p className="text-xs text-yellow-700 mt-1">
+                {currentWeek === 1 && "With one daily dose, you'll likely need to refill every 4-5 days."}
+                {currentWeek === 2 && "With two daily doses, you'll likely need to refill every 2-3 days."}
+                {currentWeek === 3 && "With three daily doses, you may need to refill daily or every other day."}
+              </p>
+            </div>
           </TabsContent>
         </Tabs>
 
