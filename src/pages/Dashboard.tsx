@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import AdherenceCard from "@/components/dashboard/AdherenceCard";
 import NextMedicationCard from "@/components/dashboard/NextMedicationCard";
 import CareNetworkCard from "@/components/dashboard/CareNetworkCard";
+import MotivationalWidget from "@/components/dashboard/MotivationalWidget";
 
 const Dashboard = () => {
   return (
@@ -36,6 +37,8 @@ const Dashboard = () => {
 
           <NextMedicationCard />
         </div>
+
+        <MotivationalWidget />
 
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Your care network</h2>
