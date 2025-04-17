@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity, Award, Heart, Flame, Clock, PlusCircle, RefreshCcw } from "lucide-react";
@@ -13,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { generateMotivationalMessage } from "@/services/openai";
 
 interface MotivationalWidgetProps {
   className?: string;
@@ -32,12 +32,11 @@ const MotivationalWidget = ({
   const [impactScore, setImpactScore] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("steps");
-  
-  // Step goal based on adherence - could be more dynamic in a full implementation
+  const [motivationalMessage, setMotivationalMessage] = useState<string>("");
+
   const stepGoal = 8000;
   const stepProgress = Math.min(100, Math.round((dailySteps / stepGoal) * 100));
-  
-  // Check for existing health connection on component mount
+
   useEffect(() => {
     const healthData = getHealthData();
     setIsConnected(healthData.isConnected);
@@ -50,14 +49,12 @@ const MotivationalWidget = ({
       updateImpactScore(adherenceRate, healthData.steps);
     }
   }, [adherenceRate]);
-  
-  // Update impact score calculation
+
   const updateImpactScore = (adherence: number, steps: number) => {
     const score = getAdherenceImpactScore(adherence, steps);
     setImpactScore(score);
   };
-  
-  // Handle health API connection
+
   const handleConnectHealth = async () => {
     setIsConnecting(true);
     try {
@@ -77,8 +74,7 @@ const MotivationalWidget = ({
       setIsConnecting(false);
     }
   };
-  
-  // Handle health API disconnection
+
   const handleDisconnectHealth = async () => {
     try {
       await disconnectFromHealthApi();
@@ -94,8 +90,7 @@ const MotivationalWidget = ({
       toast.error("Failed to disconnect");
     }
   };
-  
-  // Handle refreshing health data
+
   const handleRefreshHealth = async () => {
     if (!isConnected) return;
     
@@ -115,8 +110,7 @@ const MotivationalWidget = ({
       setIsRefreshing(false);
     }
   };
-  
-  // Generate motivational message based on steps and adherence
+
   const getMotivationalMessage = () => {
     if (adherenceRate >= 80 && stepProgress >= 80) {
       return "Amazing work! Your medication adherence and physical activity are both excellent. Keep up the great work!";
@@ -128,6 +122,24 @@ const MotivationalWidget = ({
       return "Small steps make big differences. Take your medications and a short walk to feel better today.";
     }
   };
+
+  useEffect(() => {
+    const updateMotivationalMessage = async () => {
+      if (isConnected) {
+        const message = await generateMotivationalMessage({
+          adherenceRate,
+          healthData: {
+            steps: dailySteps,
+            activeMinutes,
+            caloriesBurned
+          }
+        });
+        setMotivationalMessage(message);
+      }
+    };
+    
+    updateMotivationalMessage();
+  }, [adherenceRate, dailySteps, activeMinutes, caloriesBurned, isConnected]);
 
   return (
     <Card className={`border-2 border-secondary/10 shadow-sm ${className}`}>
@@ -284,7 +296,7 @@ const MotivationalWidget = ({
         <p className="text-sm pt-3">
           {!isConnected 
             ? "Connect your fitness tracker to get personalized health insights"
-            : getMotivationalMessage()
+            : motivationalMessage || getMotivationalMessage()
           }
         </p>
       </CardContent>
