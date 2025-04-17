@@ -1,8 +1,7 @@
-
 // Health Connect API Service
 // This service handles the connection to health data providers
 
-interface HealthConnectData {
+export interface HealthConnectData {
   steps: number;
   lastUpdated: string;
   isConnected: boolean;
