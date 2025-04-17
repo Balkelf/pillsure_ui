@@ -7,6 +7,7 @@ import AdherenceCard from "@/components/dashboard/AdherenceCard";
 import NextMedicationCard from "@/components/dashboard/NextMedicationCard";
 import CareNetworkCard from "@/components/dashboard/CareNetworkCard";
 import MotivationalWidget from "@/components/dashboard/MotivationalWidget";
+import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 
 const Dashboard = () => {
   return (
@@ -38,6 +39,8 @@ const Dashboard = () => {
           <NextMedicationCard />
         </div>
 
+        <DeviceStatusCard />
+        
         <MotivationalWidget />
 
         <div className="space-y-3">
