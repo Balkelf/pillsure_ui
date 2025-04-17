@@ -579,7 +579,7 @@ const Medications = () => {
             </div>
             
             <DeviceStatusCard 
-              compartments={getCompartmentConfig()} 
+              onConfigureCompartments={handleConfigureCompartments} 
             />
             
             <div className="bg-yellow-50 p-3 rounded-md border border-yellow-100 mt-4">
