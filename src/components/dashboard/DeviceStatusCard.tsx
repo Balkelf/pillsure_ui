@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Battery, BatteryMedium, Box, Pill, CalendarDays, Clock, Settings, Plus, Minus, AlertCircle } from "lucide-react";
+import { Battery, BatteryMedium, Box, Pill, CalendarDays, Clock, Settings, Plus, Minus, AlertCircle, CalendarClock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/sonner";
 
 interface MedicationInCompartment {
   id: number;
@@ -79,7 +81,20 @@ const DeviceStatusCard = ({
   const [selectedMedication, setSelectedMedication] = useState("metformin");
   const [selectedCount, setSelectedCount] = useState("1");
   const [selectedCompartment, setSelectedCompartment] = useState<number | null>(null);
+  const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
+  const navigate = useNavigate();
   
+  useEffect(() => {
+    const savedMode = localStorage.getItem("pillsureMode") as "daily" | "multiday" | null;
+    if (savedMode) {
+      setDeviceMode(savedMode);
+    }
+  }, []);
+  
+  const handleChangeMode = () => {
+    navigate("/setup");
+  };
+
   const getBatteryIcon = (level: number) => {
     if (level <= 20) {
       return <Battery className="h-5 w-5 text-red-500" />;
@@ -136,10 +151,29 @@ const DeviceStatusCard = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
             <div className="bg-primary/10 p-2 rounded-full mr-3">
-              <CalendarDays className="h-5 w-5 text-primary" />
+              {deviceMode === "daily" ? (
+                <CalendarClock className="h-5 w-5 text-primary" />
+              ) : (
+                <CalendarDays className="h-5 w-5 text-primary" />
+              )}
             </div>
             <div>
-              <p className="text-sm">Started on: {new Date(startDate).toLocaleDateString()}</p>
+              <div className="flex items-center">
+                <p className="text-sm font-medium">
+                  {deviceMode === "daily" ? "Daily Refill Mode" : "Multi-Day Refill Mode"}
+                </p>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="ml-2 h-6 text-xs"
+                  onClick={handleChangeMode}
+                >
+                  Change
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Started on: {new Date(startDate).toLocaleDateString()}
+              </p>
             </div>
           </div>
           <button 
@@ -190,7 +224,9 @@ const DeviceStatusCard = ({
           <div className="bg-amber-50 p-3 rounded-md border border-amber-100 mb-2">
             <p className="text-xs text-amber-800 flex items-center">
               <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-              Each compartment can only contain one type of medication to avoid confusion when taking tablets on future days.
+              {deviceMode === "daily" 
+                ? "Each compartment contains one day's dose for a specific time of day" 
+                : "Each compartment contains a 3-day supply for a specific time of day"}
             </p>
           </div>
           
@@ -231,6 +267,7 @@ const DeviceStatusCard = ({
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">
                           {med.count} tablet{med.count > 1 ? 's' : ''}
+                          {deviceMode === "multiday" && " (3-day supply)"}
                         </span>
                         {configureMode && selectedCompartment === compartment.id && (
                           <div className="flex items-center">
@@ -283,7 +320,10 @@ const DeviceStatusCard = ({
                 <Button variant="outline" size="sm" onClick={() => setConfigureMode(false)}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={() => setConfigureMode(false)}>
+                <Button size="sm" onClick={() => {
+                  setConfigureMode(false);
+                  toast.success("Device configuration updated");
+                }}>
                   Save Configuration
                 </Button>
               </div>

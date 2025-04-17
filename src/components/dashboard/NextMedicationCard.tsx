@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckCircle2, ArrowRight } from "lucide-react";
 import { getNextMedication } from "@/lib/data";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface NextMedicationCardProps {
   className?: string;
@@ -15,6 +15,14 @@ const NextMedicationCard = ({
 }: NextMedicationCardProps) => {
   const nextMed = getNextMedication();
   const [viewed, setViewed] = useState(false);
+  const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
+  
+  useEffect(() => {
+    const savedMode = localStorage.getItem("pillsureMode") as "daily" | "multiday" | null;
+    if (savedMode) {
+      setDeviceMode(savedMode);
+    }
+  }, []);
   
   if (!nextMed) {
     return (
@@ -71,6 +79,11 @@ const NextMedicationCard = ({
                   <ArrowRight className="h-4 w-4" />
                 </div>
               </div>
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              <span className="bg-primary/10 text-primary px-2 py-1 rounded-full">
+                {deviceMode === "daily" ? "Daily Refill Mode" : "Multi-Day Refill Mode"}
+              </span>
             </div>
           </>
         ) : (

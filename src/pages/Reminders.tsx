@@ -4,14 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Clock, Volume2, Smartphone, Edit, Plus } from "lucide-react";
+import { Bell, Clock, Volume2, Smartphone, Edit, Plus, CalendarClock, CalendarDays } from "lucide-react";
 import { reminders } from "@/lib/data";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import PillReminderCard from "@/components/reminders/PillReminderCard";
 
 const Reminders = () => {
   const [activeReminders, setActiveReminders] = useState(reminders);
+  const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
+  
+  useEffect(() => {
+    const savedMode = localStorage.getItem("pillsureMode") as "daily" | "multiday" | null;
+    if (savedMode) {
+      setDeviceMode(savedMode);
+    }
+  }, []);
 
   // Mock notification settings
   const notificationSettings = [
@@ -36,6 +44,15 @@ const Reminders = () => {
       description: "Alert your care team of missed doses",
       enabled: true,
     },
+    {
+      id: "refills",
+      icon: deviceMode === "daily" ? CalendarClock : CalendarDays,
+      title: deviceMode === "daily" ? "Daily refill reminders" : "3-day refill reminders",
+      description: deviceMode === "daily" 
+        ? "Reminder to refill your device daily" 
+        : "Reminder to refill your device every 3 days",
+      enabled: true,
+    },
   ];
 
   return (
@@ -45,6 +62,30 @@ const Reminders = () => {
           <h1 className="text-2xl font-bold text-foreground">Reminders</h1>
           <p className="text-muted-foreground">Manage your medication alerts</p>
         </div>
+
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-blue-100 p-1 rounded-full">
+                {deviceMode === "daily" ? (
+                  <CalendarClock className="h-5 w-5 text-blue-600" />
+                ) : (
+                  <CalendarDays className="h-5 w-5 text-blue-600" />
+                )}
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-blue-800">
+                  {deviceMode === "daily" ? "Daily Refill Mode" : "Multi-Day Refill Mode"}
+                </h3>
+                <p className="text-xs text-blue-700">
+                  {deviceMode === "daily"
+                    ? "Your device is configured for daily refills. You'll get reminders to fill your device once per day."
+                    : "Your device is configured for 3-day refills. You'll get reminders to fill your device every 3 days."}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="schedules">
           <TabsList className="grid w-full grid-cols-2">
@@ -84,6 +125,37 @@ const Reminders = () => {
                 }}
               />
             ))}
+            
+            {/* Special Refill Reminder based on device mode */}
+            <Card className="border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="bg-primary/10 p-2 rounded-full mr-3">
+                      {deviceMode === "daily" ? (
+                        <CalendarClock className="h-5 w-5 text-primary" />
+                      ) : (
+                        <CalendarDays className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-medium">
+                        {deviceMode === "daily" ? "Daily Device Refill" : "3-Day Device Refill"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {deviceMode === "daily" ? "Every day at 9:00 PM" : "Every 3 days at 9:00 PM"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Switch checked={true} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="settings" className="mt-4 space-y-4">
