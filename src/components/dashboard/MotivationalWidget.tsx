@@ -9,10 +9,10 @@ import {
   refreshHealthData,
   getAdherenceImpactScore
 } from "@/services/healthConnect";
+import { generateAIMotivationalMessage } from "@/services/aiMotivation";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { generateMotivationalMessage } from "@/services/openai";
 
 interface MotivationalWidgetProps {
   className?: string;
@@ -47,12 +47,30 @@ const MotivationalWidget = ({
       setCaloriesBurned(healthData.caloriesBurned || 0);
       setHeartRate(healthData.averageHeartRate || 0);
       updateImpactScore(adherenceRate, healthData.steps);
+      updateMotivationalMessage(healthData);
     }
   }, [adherenceRate]);
 
   const updateImpactScore = (adherence: number, steps: number) => {
     const score = getAdherenceImpactScore(adherence, steps);
     setImpactScore(score);
+  };
+
+  const updateMotivationalMessage = async (healthData: any) => {
+    try {
+      const message = await generateAIMotivationalMessage({
+        adherenceRate,
+        healthData: {
+          steps: healthData.steps,
+          activeMinutes: healthData.activeMinutes,
+          caloriesBurned: healthData.caloriesBurned
+        }
+      });
+      setMotivationalMessage(message);
+    } catch (error) {
+      console.error('Failed to generate motivational message:', error);
+      // Fallback message is handled by the service
+    }
   };
 
   const handleConnectHealth = async () => {
@@ -102,6 +120,7 @@ const MotivationalWidget = ({
       setCaloriesBurned(healthData.caloriesBurned || 0);
       setHeartRate(healthData.averageHeartRate || 0);
       updateImpactScore(adherenceRate, healthData.steps);
+      await updateMotivationalMessage(healthData);
       toast.success("Health data updated");
     } catch (error) {
       console.error("Failed to refresh health data:", error);
@@ -110,36 +129,6 @@ const MotivationalWidget = ({
       setIsRefreshing(false);
     }
   };
-
-  const getMotivationalMessage = () => {
-    if (adherenceRate >= 80 && stepProgress >= 80) {
-      return "Amazing work! Your medication adherence and physical activity are both excellent. Keep up the great work!";
-    } else if (adherenceRate >= 80 && stepProgress < 80) {
-      return "Great job with your medications! A short walk could help your body absorb them better.";
-    } else if (adherenceRate < 80 && stepProgress >= 80) {
-      return "Impressive activity today! Remember that regular medication plus exercise is the perfect combination.";
-    } else {
-      return "Small steps make big differences. Take your medications and a short walk to feel better today.";
-    }
-  };
-
-  useEffect(() => {
-    const updateMotivationalMessage = async () => {
-      if (isConnected) {
-        const message = await generateMotivationalMessage({
-          adherenceRate,
-          healthData: {
-            steps: dailySteps,
-            activeMinutes,
-            caloriesBurned
-          }
-        });
-        setMotivationalMessage(message);
-      }
-    };
-    
-    updateMotivationalMessage();
-  }, [adherenceRate, dailySteps, activeMinutes, caloriesBurned, isConnected]);
 
   return (
     <Card className={`border-2 border-secondary/10 shadow-sm ${className}`}>
@@ -296,8 +285,7 @@ const MotivationalWidget = ({
         <p className="text-sm pt-3">
           {!isConnected 
             ? "Connect your fitness tracker to get personalized health insights"
-            : motivationalMessage || getMotivationalMessage()
-          }
+            : motivationalMessage || "Connect your device to get personalized motivation"}
         </p>
       </CardContent>
     </Card>
