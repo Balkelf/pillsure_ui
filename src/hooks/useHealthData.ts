@@ -1,134 +1,168 @@
 
-import { useState, useEffect } from "react";
-import { 
-  connectToHealthApi, 
-  disconnectFromHealthApi, 
-  getHealthData,
-  refreshHealthData,
-  getAdherenceImpactScore
-} from "@/services/healthConnect";
+import { useState } from "react";
 import { generateAIMotivationalMessage } from "@/services/aiMotivation";
-import { toast } from "sonner";
+import { getHbA1cTrend, getLatestHbA1c, isHbA1cCheckDue } from "@/lib/data";
 
-export interface HealthData {
+interface HealthData {
+  isConnected: boolean;
   steps: number;
   activeMinutes: number;
   caloriesBurned: number;
-  heartRate: number;
   impactScore: number;
-  isConnected: boolean;
   motivationalMessage: string;
 }
 
-export const useHealthData = (adherenceRate: number) => {
+export const useHealthData = (adherenceRate: number = 80) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [healthData, setHealthData] = useState<HealthData>({
+    isConnected: false,
     steps: 0,
     activeMinutes: 0,
     caloriesBurned: 0,
-    heartRate: 0,
     impactScore: 0,
-    isConnected: false,
     motivationalMessage: "",
   });
 
-  useEffect(() => {
-    const data = getHealthData();
-    const isConnected = data.isConnected;
-    
-    if (isConnected) {
-      updateHealthMetrics(data);
-      updateImpactScore(adherenceRate, data.steps);
-      updateMotivationalMessage(data);
-    }
+  const calculateImpactScore = (steps: number, activeMinutes: number, adherenceRate: number) => {
+    // Weight factors
+    const stepsWeight = 0.3;
+    const activeMinutesWeight = 0.3;
+    const adherenceWeight = 0.4;
 
-    setHealthData(prev => ({ ...prev, isConnected }));
-  }, [adherenceRate]);
+    // Normalize to 0-100 scale
+    const normalizedSteps = Math.min(steps / 10000 * 100, 100);
+    const normalizedActiveMinutes = Math.min(activeMinutes / 60 * 100, 100);
 
-  const updateHealthMetrics = (data: any) => {
-    setHealthData(prev => ({
-      ...prev,
-      steps: data.steps,
-      activeMinutes: data.activeMinutes || 0,
-      caloriesBurned: data.caloriesBurned || 0,
-      heartRate: data.averageHeartRate || 0,
-    }));
-  };
-
-  const updateImpactScore = (adherence: number, steps: number) => {
-    const score = getAdherenceImpactScore(adherence, steps);
-    setHealthData(prev => ({ ...prev, impactScore: score }));
-  };
-
-  const updateMotivationalMessage = async (data: any) => {
-    try {
-      const message = await generateAIMotivationalMessage({
-        adherenceRate,
-        healthData: {
-          steps: data.steps,
-          activeMinutes: data.activeMinutes,
-          caloriesBurned: data.caloriesBurned
-        }
-      });
-      setHealthData(prev => ({ ...prev, motivationalMessage: message }));
-    } catch (error) {
-      console.error('Failed to generate motivational message:', error);
-    }
+    // Calculate weighted score
+    return Math.round(
+      (normalizedSteps * stepsWeight) +
+      (normalizedActiveMinutes * activeMinutesWeight) +
+      (adherenceRate * adherenceWeight)
+    );
   };
 
   const handleConnect = async () => {
     setIsConnecting(true);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Randomize data within realistic ranges
+    const steps = Math.floor(Math.random() * 6000) + 3000; // 3000-9000 steps
+    const activeMinutes = Math.floor(Math.random() * 40) + 15; // 15-55 minutes
+    const caloriesBurned = Math.floor(steps * 0.04); // Roughly 4 calories per 100 steps
+    
+    // Calculate impact score based on health data and adherence
+    const impactScore = calculateImpactScore(steps, activeMinutes, adherenceRate);
+    
     try {
-      await connectToHealthApi();
-      const data = getHealthData();
-      updateHealthMetrics(data);
-      updateImpactScore(adherenceRate, data.steps);
-      setHealthData(prev => ({ ...prev, isConnected: true }));
-      toast.success("Connected to Health services");
-    } catch (error) {
-      console.error("Failed to connect to health API:", error);
-      toast.error("Failed to connect to Health services");
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const handleDisconnect = async () => {
-    try {
-      await disconnectFromHealthApi();
-      setHealthData({
-        steps: 0,
-        activeMinutes: 0,
-        caloriesBurned: 0,
-        heartRate: 0,
-        impactScore: 0,
-        isConnected: false,
-        motivationalMessage: "",
+      // Get HbA1c data to enhance the motivational message
+      const hba1cData = getLatestHbA1c();
+      const hba1cTrend = getHbA1cTrend();
+      const hba1cDue = isHbA1cCheckDue();
+      
+      // Get AI motivational message
+      const aiMessage = await generateAIMotivationalMessage(adherenceRate, {
+        steps,
+        activeMinutes,
+        caloriesBurned,
+        hba1c: hba1cData?.value,
+        hba1cTrend,
+        hba1cDue
       });
-      toast.success("Disconnected from Health services");
+      
+      setHealthData({
+        isConnected: true,
+        steps,
+        activeMinutes,
+        caloriesBurned,
+        impactScore,
+        motivationalMessage: aiMessage,
+      });
     } catch (error) {
-      console.error("Failed to disconnect from health API:", error);
-      toast.error("Failed to disconnect");
+      console.error("Error generating motivational message:", error);
+      
+      setHealthData({
+        isConnected: true,
+        steps,
+        activeMinutes,
+        caloriesBurned,
+        impactScore,
+        motivationalMessage: "Great job on taking your medications consistently! Keep up the great work with your physical activity.",
+      });
     }
+    
+    setIsConnecting(false);
   };
 
   const handleRefresh = async () => {
     if (!healthData.isConnected) return;
     
     setIsRefreshing(true);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Update with slightly different data
+    const currentSteps = healthData.steps;
+    const currentActiveMinutes = healthData.activeMinutes;
+    
+    const steps = currentSteps + Math.floor(Math.random() * 500); // Add up to 500 more steps
+    const activeMinutes = currentActiveMinutes + Math.floor(Math.random() * 5); // Add up to 5 more minutes
+    const caloriesBurned = Math.floor(steps * 0.04);
+    
+    // Recalculate impact score
+    const impactScore = calculateImpactScore(steps, activeMinutes, adherenceRate);
+    
     try {
-      const data = await refreshHealthData();
-      updateHealthMetrics(data);
-      updateImpactScore(adherenceRate, data.steps);
-      await updateMotivationalMessage(data);
-      toast.success("Health data updated");
+      // Get HbA1c data
+      const hba1cData = getLatestHbA1c();
+      const hba1cTrend = getHbA1cTrend();
+      const hba1cDue = isHbA1cCheckDue();
+      
+      // Get fresh AI motivational message
+      const aiMessage = await generateAIMotivationalMessage(adherenceRate, {
+        steps,
+        activeMinutes,
+        caloriesBurned,
+        hba1c: hba1cData?.value,
+        hba1cTrend,
+        hba1cDue
+      });
+      
+      setHealthData({
+        ...healthData,
+        steps,
+        activeMinutes,
+        caloriesBurned,
+        impactScore,
+        motivationalMessage: aiMessage,
+      });
     } catch (error) {
-      console.error("Failed to refresh health data:", error);
-      toast.error("Failed to update health data");
-    } finally {
-      setIsRefreshing(false);
+      console.error("Error refreshing motivational message:", error);
+      
+      setHealthData({
+        ...healthData,
+        steps,
+        activeMinutes,
+        caloriesBurned,
+        impactScore,
+      });
     }
+    
+    setIsRefreshing(false);
+  };
+
+  const handleDisconnect = () => {
+    setHealthData({
+      isConnected: false,
+      steps: 0,
+      activeMinutes: 0,
+      caloriesBurned: 0,
+      impactScore: 0,
+      motivationalMessage: "",
+    });
   };
 
   return {

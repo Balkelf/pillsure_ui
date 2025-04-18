@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Battery, BatteryMedium, Box, Pill, CalendarDays, Clock, Settings, Plus, Minus, AlertCircle, CalendarClock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -52,6 +53,7 @@ const DeviceStatusCard = ({
   const [selectedCount, setSelectedCount] = useState("1");
   const [selectedCompartment, setSelectedCompartment] = useState<number | null>(null);
   const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
+  const [compartments, setCompartments] = useState<CompartmentStatus[]>([]);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -60,6 +62,11 @@ const DeviceStatusCard = ({
       setDeviceMode(savedMode);
     }
   }, []);
+
+  useEffect(() => {
+    // Update compartments whenever device mode changes
+    setCompartments(getCompartments());
+  }, [deviceMode]);
 
   const getCompartments = () => {
     if (deviceMode === "daily") {
@@ -126,8 +133,6 @@ const DeviceStatusCard = ({
       ];
     }
   };
-  
-  const compartments = getCompartments();
 
   const getBatteryIcon = (level: number) => {
     if (level <= 20) {

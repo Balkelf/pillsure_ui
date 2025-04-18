@@ -8,6 +8,8 @@ interface HealthWidgetHeaderProps {
   isRefreshing: boolean;
   onConnect: () => void;
   onRefresh: () => void;
+  hba1cValue?: number;
+  hba1cDate?: string;
 }
 
 const HealthWidgetHeader = ({
@@ -16,7 +18,23 @@ const HealthWidgetHeader = ({
   isRefreshing,
   onConnect,
   onRefresh,
+  hba1cValue,
+  hba1cDate,
 }: HealthWidgetHeaderProps) => {
+  const getHbA1cStatus = (value?: number) => {
+    if (!value) return null;
+    
+    if (value < 48) {
+      return "good";
+    } else if (value < 58) {
+      return "moderate";
+    } else {
+      return "high";
+    }
+  };
+
+  const hba1cStatus = getHbA1cStatus(hba1cValue);
+  
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center">
@@ -26,6 +44,27 @@ const HealthWidgetHeader = ({
         <div>
           <h3 className="font-medium">Health Activity</h3>
           <p className="text-sm text-muted-foreground">Today's progress</p>
+          {isConnected && hba1cValue && (
+            <div className="mt-1 text-xs">
+              <span>HbA1c: </span>
+              <span className={`font-medium ${
+                hba1cStatus === "good" ? "text-green-600" : 
+                hba1cStatus === "moderate" ? "text-amber-600" : 
+                "text-red-600"
+              }`}>
+                {hba1cValue} mmol/mol
+              </span>
+              {hba1cDate && (
+                <span className="text-muted-foreground ml-1">
+                  ({new Date(hba1cDate).toLocaleDateString()} - {
+                    new Date() > new Date(new Date(hba1cDate).setMonth(new Date(hba1cDate).getMonth() + 6)) 
+                      ? "Due for recheck" 
+                      : "Next check: " + new Date(new Date(hba1cDate).setMonth(new Date(hba1cDate).getMonth() + 6)).toLocaleDateString()
+                  })
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {!isConnected ? (

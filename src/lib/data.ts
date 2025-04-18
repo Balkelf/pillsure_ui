@@ -32,7 +32,7 @@ export interface CaregiverContact {
 
 export interface HealthMetric {
   id: string;
-  type: 'blood_pressure' | 'blood_glucose' | 'weight' | 'custom';
+  type: 'blood_pressure' | 'blood_glucose' | 'weight' | 'hba1c' | 'custom';
   value: number | string;
   unit: string;
   timestamp: string;
@@ -237,6 +237,22 @@ export const healthMetrics: HealthMetric[] = [
     value: 115,
     unit: "mg/dL",
     timestamp: "2023-04-17T08:35:00Z",
+  },
+  {
+    id: "hba1c1",
+    type: "hba1c",
+    value: 52,
+    unit: "mmol/mol",
+    timestamp: "2023-10-17T09:00:00Z",
+    notes: "Initial measurement"
+  },
+  {
+    id: "hba1c2",
+    type: "hba1c",
+    value: 48,
+    unit: "mmol/mol",
+    timestamp: "2024-04-15T09:00:00Z",
+    notes: "Improvement after medication adherence"
   }
 ];
 
@@ -293,4 +309,55 @@ export function getAdherenceByDay(): { day: string; adherence: number }[] {
 export function getCurrentStreak(): number {
   // This would normally calculate based on historical data
   return 3; // Mock 3-day streak
+}
+
+// New helper functions for HbA1c
+export function getLatestHbA1c(): { value: number, timestamp: string } | null {
+  const hba1cMeasurements = healthMetrics.filter(metric => metric.type === 'hba1c');
+  
+  if (hba1cMeasurements.length === 0) {
+    return null;
+  }
+  
+  const sortedMeasurements = [...hba1cMeasurements].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+  
+  const latest = sortedMeasurements[0];
+  return { 
+    value: Number(latest.value), 
+    timestamp: latest.timestamp 
+  };
+}
+
+export function isHbA1cCheckDue(): boolean {
+  const latest = getLatestHbA1c();
+  if (!latest) return true;
+  
+  const latestDate = new Date(latest.timestamp);
+  const nextCheckDate = new Date(latestDate);
+  nextCheckDate.setMonth(nextCheckDate.getMonth() + 6); // Next check in 6 months
+  
+  return new Date() > nextCheckDate;
+}
+
+export function getHbA1cTrend(): 'improving' | 'worsening' | 'stable' | 'unknown' {
+  const hba1cMeasurements = healthMetrics
+    .filter(metric => metric.type === 'hba1c')
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  
+  if (hba1cMeasurements.length < 2) {
+    return 'unknown';
+  }
+  
+  const firstValue = Number(hba1cMeasurements[0].value);
+  const lastValue = Number(hba1cMeasurements[hba1cMeasurements.length - 1].value);
+  
+  const difference = lastValue - firstValue;
+  
+  if (Math.abs(difference) < 3) {
+    return 'stable';
+  }
+  
+  return difference < 0 ? 'improving' : 'worsening';
 }

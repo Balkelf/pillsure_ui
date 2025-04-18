@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useHealthData } from "@/hooks/useHealthData";
 import HealthWidgetHeader from "./HealthWidgetHeader";
 import HealthMetricsTabs from "./HealthMetricsTabs";
+import { getLatestHbA1c } from "@/lib/data";
 
 interface MotivationalWidgetProps {
   className?: string;
@@ -23,6 +24,8 @@ const MotivationalWidget = ({
     handleDisconnect,
     handleRefresh,
   } = useHealthData(adherenceRate);
+  
+  const latestHbA1c = getLatestHbA1c();
 
   return (
     <Card className={`border-2 border-secondary/10 shadow-sm ${className}`}>
@@ -33,6 +36,8 @@ const MotivationalWidget = ({
           isRefreshing={isRefreshing}
           onConnect={handleConnect}
           onRefresh={handleRefresh}
+          hba1cValue={latestHbA1c?.value}
+          hba1cDate={latestHbA1c?.timestamp}
         />
       </CardHeader>
       
