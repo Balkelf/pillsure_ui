@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import LoginSection from "@/components/auth/LoginSection";
 import OAuthButtons from "@/components/auth/OAuthButtons";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const InitialSetup = () => {
   const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
@@ -28,7 +28,17 @@ const InitialSetup = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleContinue = () => {
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get("access_token");
+    
+    if (accessToken) {
+      localStorage.setItem("pillsureMode", deviceMode);
+      navigate("/");
+    }
+  }, [deviceMode, navigate]);
+
+  const handleContinue = async () => {
     if (activeTab === "create") {
       if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
         toast({
@@ -47,12 +57,29 @@ const InitialSetup = () => {
         });
         return;
       }
+
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name
+          }
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Error creating account",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
     }
     
-    // Save device mode to localStorage
     localStorage.setItem("pillsureMode", deviceMode);
     
-    // In a real app, we would handle account creation here
     toast({
       title: "Setup complete",
       description: activeTab === "create" 
@@ -69,8 +96,6 @@ const InitialSetup = () => {
       description: "Google authentication would be triggered here"
     });
     
-    // In a real app with OAuth, we would handle Google login
-    // For demo purposes, we'll save device mode and redirect
     localStorage.setItem("pillsureMode", deviceMode);
     navigate("/");
   };
@@ -81,8 +106,6 @@ const InitialSetup = () => {
       description: "Apple authentication would be triggered here"
     });
     
-    // In a real app with OAuth, we would handle Apple login
-    // For demo purposes, we'll save device mode and redirect
     localStorage.setItem("pillsureMode", deviceMode);
     navigate("/");
   };
