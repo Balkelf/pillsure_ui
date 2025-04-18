@@ -7,6 +7,9 @@ import { useState } from "react";
 import { format, addDays } from "date-fns";
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CustomMedication } from "@/lib/types/medications";
+import { toast } from "@/hooks/use-toast";
+import AddMedicationForm from "@/components/medications/AddMedicationForm";
 
 const Medications = () => {
   const startDate = "2023-04-10";
@@ -685,6 +688,14 @@ const Medications = () => {
           </Button>
         </div>
       </div>
+
+      {showAddMedication && (
+        <AddMedicationForm
+          open={showAddMedication}
+          onOpenChange={setShowAddMedication}
+          onSave={handleAddMedication}
+        />
+      )}
     </MobileLayout>
   );
 };
