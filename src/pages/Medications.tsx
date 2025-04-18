@@ -12,6 +12,8 @@ const Medications = () => {
   const startDate = "2023-04-10";
   const [currentTab, setCurrentTab] = useState("today");
   const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
+  const [showAddMedication, setShowAddMedication] = useState(false);
+  const [customMedications, setCustomMedications] = useState<CustomMedication[]>([]);
 
   const calculateCurrentWeek = () => {
     const start = new Date(startDate);
@@ -374,6 +376,14 @@ const Medications = () => {
     setCurrentTab("configure");
   };
 
+  const handleAddMedication = (medication: CustomMedication) => {
+    setCustomMedications([...customMedications, medication]);
+    toast({
+      title: "Medication added",
+      description: `${medication.name} has been added to your schedule`,
+    });
+  };
+
   return (
     <MobileLayout>
       <div className="space-y-6">
@@ -412,7 +422,20 @@ const Medications = () => {
           </TabsList>
           
           <TabsContent value="today" className="mt-4 space-y-4">
-            {getTodaySchedule().map((med) => (
+            {getTodaySchedule().concat(
+              customMedications.map(med => ({
+                id: med.id,
+                name: med.name,
+                dosage: med.dosage,
+                frequency: med.frequency === 'once' ? 'Once daily' :
+                          med.frequency === 'twice' ? 'Twice daily' :
+                          med.frequency === 'three_times' ? 'Three times daily' :
+                          'Custom',
+                times: med.times,
+                status: "upcoming",
+                notes: med.instructions
+              }))
+            ).map((med) => (
               <Card key={med.id} className="overflow-hidden">
                 <CardContent className="p-0">
                   <div className="flex items-center p-4">
@@ -654,7 +677,10 @@ const Medications = () => {
         </Tabs>
 
         <div className="pt-4">
-          <Button className="w-full">
+          <Button 
+            className="w-full" 
+            onClick={() => setShowAddMedication(true)}
+          >
             Add new medication
           </Button>
         </div>
