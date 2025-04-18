@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { fetchDeviceData, subscribeToDeviceUpdates, syncDeviceData } from "@/services/deviceSync";
+import { Device, DeviceCompartment } from "@/lib/types/devices";
 
 interface MedicationInCompartment {
   id: string | number;
@@ -78,13 +79,13 @@ const DeviceStatusCard = ({
               name: compartment.name,
               maxCapacity: compartment.max_capacity,
               currentCapacity: compartment.current_capacity,
-              medications: compartment.medications.map(med => ({
+              medications: compartment.medications?.map(med => ({
                 id: med.id,
                 name: med.name,
                 dosage: med.dosage || "",
                 count: med.count,
                 time: med.time || ""
-              }))
+              })) || []
             };
           });
           

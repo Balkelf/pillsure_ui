@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
+import { Device, DeviceCompartment, CompartmentMedication, MedicationLog } from "@/lib/types/devices";
 
 export interface DeviceData {
   device_id: string;
@@ -10,6 +11,7 @@ export interface DeviceData {
     name: string;
     max_capacity: number;
     current_capacity: number;
+    lid_angle?: number;
     medications: {
       name: string;
       dosage: string;
@@ -65,7 +67,7 @@ export const syncDeviceData = async (deviceData: DeviceData) => {
 };
 
 // Function to fetch the latest device data
-export const fetchDeviceData = async () => {
+export const fetchDeviceData = async (): Promise<Device | null> => {
   try {
     const { data: userData } = await supabase.auth.getUser();
     
@@ -87,7 +89,7 @@ export const fetchDeviceData = async () => {
       return null; // No device found
     }
     
-    const device = devices[0];
+    const device = devices[0] as unknown as Device;
     
     // Fetch medications for each compartment
     const compartmentsWithMedications = await Promise.all(
@@ -101,7 +103,7 @@ export const fetchDeviceData = async () => {
         
         return {
           ...compartment,
-          medications: medications || []
+          medications: medications as CompartmentMedication[] || []
         };
       })
     );
@@ -118,7 +120,7 @@ export const fetchDeviceData = async () => {
 };
 
 // Function to subscribe to real-time device updates
-export const subscribeToDeviceUpdates = (onUpdate: (device: any) => void) => {
+export const subscribeToDeviceUpdates = (onUpdate: (device: Device | null) => void) => {
   const channel = supabase
     .channel('device-updates')
     .on(

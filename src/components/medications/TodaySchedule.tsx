@@ -6,6 +6,7 @@ import { CustomMedication } from "@/lib/types/medications";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
+import { MedicationSchedule } from "@/lib/types/devices";
 
 interface ScheduleItem {
   id: number | string;
@@ -52,17 +53,18 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
           return;
         }
         
+        // Need to cast this to any until the Database type is updated
         const { data, error } = await supabase
           .from("medication_schedules")
           .select("*")
           .eq("user_id", userData.user.id)
-          .order("name");
+          .order("name") as any;
           
         if (error) throw error;
         
         if (data && data.length > 0) {
           // Map the data to our ScheduleItem format
-          const mappedData = data.map(item => ({
+          const mappedData = (data as MedicationSchedule[]).map(item => ({
             id: item.id,
             name: item.name,
             dosage: item.dosage || "",
@@ -117,7 +119,7 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
       const { data: userData } = await supabase.auth.getUser();
       
       if (userData.user) {
-        // Record the medication as taken
+        // Record the medication as taken - need to cast to any until Database type is updated
         await supabase
           .from("medication_logs")
           .insert({
@@ -127,13 +129,13 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
             status: "taken",
             scheduled_time: new Date().toISOString(),
             taken_time: new Date().toISOString()
-          });
+          }) as any;
           
         // Update the medication schedule status
         await supabase
           .from("medication_schedules")
           .update({ status: "taken" })
-          .eq("id", medId);
+          .eq("id", medId) as any;
       }
       
       toast.success(`${med.name} marked as taken`);
@@ -158,7 +160,7 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
       const { data: userData } = await supabase.auth.getUser();
       
       if (userData.user) {
-        // Record the medication as skipped
+        // Record the medication as skipped - need to cast to any until Database type is updated
         await supabase
           .from("medication_logs")
           .insert({
@@ -167,13 +169,13 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
             schedule_id: typeof medId === 'string' ? medId : undefined,
             status: "missed",
             scheduled_time: new Date().toISOString()
-          });
+          }) as any;
           
         // Update the medication schedule status
         await supabase
           .from("medication_schedules")
           .update({ status: "missed" })
-          .eq("id", medId);
+          .eq("id", medId) as any;
       }
       
       toast.success(`${med.name} marked as skipped`);
