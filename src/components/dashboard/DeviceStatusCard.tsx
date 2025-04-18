@@ -1,37 +1,15 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Battery, BatteryMedium, Box, Pill, CalendarDays, Clock, Settings, Plus, Minus, AlertCircle, CalendarClock } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { fetchDeviceData, subscribeToDeviceUpdates, syncDeviceData } from "@/services/deviceSync";
-import { Device, DeviceCompartment } from "@/lib/types/devices";
-
-interface MedicationInCompartment {
-  id: string | number;
-  name: string;
-  dosage: string;
-  count: number;
-  time: string;
-}
-
-interface CompartmentStatus {
-  id: string | number;
-  name: string;
-  maxCapacity: number;
-  currentCapacity: number;
-  medications: MedicationInCompartment[];
-}
+import { Device } from "@/lib/types/devices";
+import { DeviceHeader } from "./device/DeviceHeader";
+import { DeviceModeSection } from "./device/DeviceModeSection";
+import { DeviceCompartment } from "./device/DeviceCompartment";
 
 interface DeviceStatusCardProps {
   className?: string;
@@ -202,35 +180,6 @@ const DeviceStatusCard = ({
     }
   };
 
-  const getBatteryIcon = (level: number) => {
-    if (level <= 20) {
-      return <Battery className="h-5 w-5 text-red-500" />;
-    } else if (level <= 50) {
-      return <BatteryMedium className="h-5 w-5 text-orange-400" />;
-    } else {
-      return <Battery className="h-5 w-5 text-green-500" />;
-    }
-  };
-
-  const getCompartmentColorClass = (currentCapacity: number, maxCapacity: number) => {
-    const percentage = (currentCapacity / maxCapacity) * 100;
-    if (percentage <= 20) return "bg-red-500";
-    if (percentage <= 50) return "bg-orange-400";
-    return "bg-green-500";
-  };
-
-  const handleConfigureClick = () => {
-    if (onConfigureCompartments) {
-      onConfigureCompartments();
-    } else {
-      setConfigureMode(!configureMode);
-    }
-  };
-
-  const handleSelectCompartment = (compartmentId: number | string) => {
-    setSelectedCompartment(selectedCompartment === compartmentId ? null : compartmentId);
-  };
-
   const handleManualSync = async () => {
     try {
       toast.loading("Syncing with device...");
@@ -278,67 +227,14 @@ const DeviceStatusCard = ({
   return (
     <Card className={cn("border-2 border-secondary/10 shadow-sm", className)}>
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center">
-            <div className="bg-secondary/10 p-2 rounded-full mr-3">
-              <Box className="h-5 w-5 text-secondary" />
-            </div>
-            <div>
-              <h3 className="font-medium">PillSure Device</h3>
-              <p className="text-sm text-muted-foreground">Last synced: {lastSync}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center">
-              {getBatteryIcon(batteryLevel)}
-              <span className="ml-1 text-sm font-medium">{batteryLevel}%</span>
-            </div>
-            <Button variant="ghost" size="icon" onClick={handleManualSync}>
-              <CalendarDays className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleConfigureClick}>
-              <Settings className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
+        <DeviceHeader
+          batteryLevel={batteryLevel}
+          lastSync={lastSync}
+          onManualSync={handleManualSync}
+          onConfigureClick={handleConfigureClick}
+        />
 
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center">
-            <div className="bg-primary/10 p-2 rounded-full mr-3">
-              {deviceMode === "daily" ? (
-                <CalendarClock className="h-5 w-5 text-primary" />
-              ) : (
-                <CalendarDays className="h-5 w-5 text-primary" />
-              )}
-            </div>
-            <div>
-              <div className="flex items-center">
-                <p className="text-sm font-medium">
-                  {deviceMode === "daily" ? "Daily Refill Mode" : "Multi-Day Refill Mode"}
-                </p>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="ml-2 h-6 text-xs"
-                  onClick={() => navigate("/setup")}
-                >
-                  Change
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {deviceMode === "daily" 
-                  ? "Refill compartments daily" 
-                  : "Each compartment holds a 3-day supply"}
-              </p>
-            </div>
-          </div>
-          <button 
-            onClick={() => setShowDetails(!showDetails)} 
-            className="text-sm text-primary hover:underline flex items-center"
-          >
-            {showDetails ? "Hide" : "Show"} details
-          </button>
-        </div>
+        <DeviceModeSection deviceMode={deviceMode} />
 
         <div className="space-y-3 mt-4">
           <div className="flex justify-between items-center">
@@ -366,103 +262,27 @@ const DeviceStatusCard = ({
                     <SelectValue placeholder="Count" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             )}
           </div>
-          
-          <div className="bg-amber-50 p-3 rounded-md border border-amber-100 mb-2">
-            <p className="text-xs text-amber-800 flex items-center">
-              <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-              {deviceMode === "daily" 
-                ? "Each compartment contains one day's dose for a specific time of day" 
-                : "Each compartment contains a 3-day supply for a specific time of day"}
-            </p>
-          </div>
-          
+
           {compartments.map((compartment) => (
-            <div 
-              key={compartment.id} 
-              className={cn(
-                "border rounded-md p-3 space-y-2", 
-                selectedCompartment === compartment.id && "border-primary"
-              )}
-              onClick={configureMode ? () => handleSelectCompartment(compartment.id) : undefined}
-            >
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <Pill className="h-4 w-4 mr-1 text-primary" />
-                  <span className="font-medium">{compartment.name} Compartment</span>
-                  {compartment.medications.length > 0 && (
-                    <Badge variant="outline" className="ml-2 text-xs">
-                      {compartment.medications[0].name}
-                    </Badge>
-                  )}
-                </div>
-                <span className="text-sm">
-                  {compartment.currentCapacity}/{compartment.maxCapacity} tablets
-                </span>
-              </div>
-              
-              {showDetails && (
-                <div className="pl-5 space-y-1">
-                  {compartment.medications.map((med) => (
-                    <div key={med.id} className="flex justify-between items-center text-sm">
-                      <div className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
-                        <span>
-                          {med.name} {med.dosage} ({med.time})
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {med.count} tablet{med.count > 1 ? 's' : ''}
-                          {deviceMode === "multiday" && " (3-day supply)"}
-                        </span>
-                        {configureMode && selectedCompartment === compartment.id && (
-                          <div className="flex items-center">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-6 w-6"
-                              disabled={med.count <= 1}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-6 w-6"
-                              disabled={compartment.currentCapacity >= compartment.maxCapacity}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              <Progress
-                value={(compartment.currentCapacity / compartment.maxCapacity) * 100}
-                className="h-2"
-                indicatorClassName={getCompartmentColorClass(compartment.currentCapacity, compartment.maxCapacity)}
-              />
-              
-              {compartment.currentCapacity >= compartment.maxCapacity && (
-                <p className="text-xs text-orange-600">
-                  Compartment at max capacity (5 tablets)
-                </p>
-              )}
-            </div>
+            <DeviceCompartment
+              key={compartment.id}
+              {...compartment}
+              isConfigureMode={configureMode}
+              isSelected={selectedCompartment === compartment.id}
+              deviceMode={deviceMode}
+              showDetails={showDetails}
+              onSelect={setSelectedCompartment}
+            />
           ))}
           
           {configureMode && (
