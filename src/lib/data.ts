@@ -90,21 +90,28 @@ export const reminders: Reminder[] = [
   {
     id: "rem2",
     medicationId: "med1",
-    time: "14:00",
+    time: "13:00",
     active: true,
     type: "daily",
   },
   {
     id: "rem3",
-    medicationId: "med2",
-    time: "20:00",
+    medicationId: "med1",
+    time: "19:00",
     active: true,
     type: "daily",
   },
   {
     id: "rem4",
-    medicationId: "med3",
+    medicationId: "med2",
     time: "08:00",
+    active: true,
+    type: "daily",
+  },
+  {
+    id: "rem5",
+    medicationId: "med3",
+    time: "19:00",
     active: true,
     type: "daily",
   }

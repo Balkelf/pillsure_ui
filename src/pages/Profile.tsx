@@ -14,8 +14,16 @@ import {
   Bell,
   Shield,
 } from "lucide-react";
+import { useState } from "react";
+import ProfileEditDialog from "@/components/profile/ProfileEditDialog";
+import { toast } from "@/hooks/use-toast";
 
 const Profile = () => {
+  const [profileData, setProfileData] = useState({
+    name: "Maria Anderson",
+    email: "maria.anderson@example.com"
+  });
+
   const menuItems = [
     {
       icon: Users,
@@ -49,6 +57,18 @@ const Profile = () => {
     },
   ];
 
+  const handleProfileUpdate = (name: string, email: string) => {
+    setProfileData({ name, email });
+  };
+
+  const handleLogout = () => {
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    // In a real app with authentication, we would handle actual logout here
+  };
+
   return (
     <MobileLayout>
       <div className="space-y-6">
@@ -62,18 +82,21 @@ const Profile = () => {
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                  MA
+                  {profileData.name.split(" ").map(n => n[0]).join("")}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-xl font-semibold">Maria Anderson</h2>
-                <p className="text-muted-foreground">maria.anderson@example.com</p>
+                <h2 className="text-xl font-semibold">{profileData.name}</h2>
+                <p className="text-muted-foreground">{profileData.email}</p>
               </div>
             </div>
             <div className="mt-4">
-              <Button variant="outline" className="w-full">
-                Edit Profile
-              </Button>
+              <ProfileEditDialog 
+                name={profileData.name}
+                email={profileData.email}
+                onSave={handleProfileUpdate}
+                trigger={<Button variant="outline" className="w-full">Edit Profile</Button>}
+              />
             </div>
           </CardContent>
         </Card>
@@ -126,7 +149,11 @@ const Profile = () => {
           ))}
         </div>
 
-        <Button variant="outline" className="w-full text-destructive border-destructive/20">
+        <Button 
+          variant="outline" 
+          className="w-full text-destructive border-destructive/20"
+          onClick={handleLogout}
+        >
           <LogOut className="mr-2 h-4 w-4" />
           Logout
         </Button>

@@ -27,6 +27,27 @@ const MotivationalWidget = ({
   
   const latestHbA1c = getLatestHbA1c();
 
+  // Generate a personalized motivational message based on health data
+  const getPersonalizedMessage = () => {
+    if (!healthData.isConnected) {
+      return "Connect your fitness tracker to get personalized health insights";
+    }
+    
+    if (healthData.motivationalMessage) {
+      return healthData.motivationalMessage;
+    }
+    
+    // Backup motivational messages if the AI hasn't generated one
+    const messages = [
+      "Keep up with your medication schedule to maintain your health goals!",
+      "Regular activity combined with your medication helps manage your diabetes better.",
+      "Taking your medication consistently can help improve your long-term health outcomes.",
+      "Every step and every pill counts toward better health management!"
+    ];
+    
+    return messages[Math.floor(Math.random() * messages.length)];
+  };
+
   return (
     <Card className={`border-2 border-secondary/10 shadow-sm ${className}`}>
       <CardHeader className="px-4 py-3">
@@ -68,9 +89,7 @@ const MotivationalWidget = ({
         )}
 
         <p className="text-sm pt-3">
-          {!healthData.isConnected 
-            ? "Connect your fitness tracker to get personalized health insights"
-            : healthData.motivationalMessage || "Connect your device to get personalized motivation"}
+          {getPersonalizedMessage()}
         </p>
       </CardContent>
     </Card>

@@ -9,11 +9,10 @@ import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const Medications = () => {
-  const startDate = "2023-04-10"; // Would come from user settings in a real app
+  const startDate = "2023-04-10";
   const [currentTab, setCurrentTab] = useState("today");
   const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
-  
-  // Calculate the current week in the titration schedule
+
   const calculateCurrentWeek = () => {
     const start = new Date(startDate);
     const today = new Date();
@@ -24,10 +23,9 @@ const Medications = () => {
     if (diffDays <= 14) return 2;
     return 3;
   };
-  
+
   const currentWeek = calculateCurrentWeek();
-  
-  // Determine current medication schedule based on week
+
   const getTodaySchedule = () => {
     switch(currentWeek) {
       case 1:
@@ -49,6 +47,15 @@ const Medications = () => {
           times: ["8:00 AM"],
           status: "upcoming",
           notes: "For blood pressure management"
+        },
+        {
+          id: 5,
+          name: "Atorvastatin",
+          dosage: "20mg",
+          frequency: "Once daily",
+          times: ["7:00 PM"],
+          status: "upcoming",
+          notes: "Take in the evening for cholesterol management"
         }];
       case 2:
         return [{
@@ -69,6 +76,15 @@ const Medications = () => {
           times: ["8:00 AM"],
           status: "upcoming",
           notes: "For blood pressure management"
+        },
+        {
+          id: 5,
+          name: "Atorvastatin",
+          dosage: "20mg",
+          frequency: "Once daily",
+          times: ["7:00 PM"],
+          status: "upcoming",
+          notes: "Take in the evening for cholesterol management"
         }];
       case 3:
       default:
@@ -90,11 +106,19 @@ const Medications = () => {
           times: ["8:00 AM"],
           status: "upcoming",
           notes: "For blood pressure management"
+        },
+        {
+          id: 5,
+          name: "Atorvastatin",
+          dosage: "20mg",
+          frequency: "Once daily",
+          times: ["7:00 PM"],
+          status: "upcoming",
+          notes: "Take in the evening for cholesterol management"
         }];
     }
   };
 
-  // Device compartment configurations based on mode and week
   const getCompartmentConfig = () => {
     if (deviceMode === "daily") {
       switch(currentWeek) {
@@ -108,6 +132,15 @@ const Medications = () => {
               medications: [
                 { id: 1, name: "Metformin", dosage: "500mg", count: 1, time: "8:00 AM" },
                 { id: 2, name: "Lisinopril", dosage: "10mg", count: 1, time: "8:00 AM" }
+              ]
+            },
+            { 
+              id: 2, 
+              name: "Evening", 
+              maxCapacity: 5,
+              currentCapacity: 1,
+              medications: [
+                { id: 3, name: "Atorvastatin", dosage: "20mg", count: 1, time: "7:00 PM" }
               ]
             }
           ];
@@ -127,9 +160,10 @@ const Medications = () => {
               id: 2, 
               name: "Evening", 
               maxCapacity: 5,
-              currentCapacity: 1,
+              currentCapacity: 2,
               medications: [
-                { id: 3, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" }
+                { id: 3, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" },
+                { id: 4, name: "Atorvastatin", dosage: "20mg", count: 1, time: "7:00 PM" }
               ]
             }
           ];
@@ -159,9 +193,10 @@ const Medications = () => {
               id: 3, 
               name: "Evening", 
               maxCapacity: 5,
-              currentCapacity: 1,
+              currentCapacity: 2,
               medications: [
-                { id: 4, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" }
+                { id: 4, name: "Metformin", dosage: "500mg", count: 1, time: "7:00 PM" },
+                { id: 5, name: "Atorvastatin", dosage: "20mg", count: 1, time: "7:00 PM" }
               ]
             }
           ];
@@ -178,6 +213,15 @@ const Medications = () => {
               medications: [
                 { id: 1, name: "Metformin", dosage: "500mg", count: 3, time: "8:00 AM (3 days)" },
                 { id: 2, name: "Lisinopril", dosage: "10mg", count: 3, time: "8:00 AM (3 days)" }
+              ]
+            },
+            { 
+              id: 2, 
+              name: "3-Day Supply (Evening)", 
+              maxCapacity: 5,
+              currentCapacity: 3,
+              medications: [
+                { id: 3, name: "Atorvastatin", dosage: "20mg", count: 3, time: "7:00 PM (3 days)" }
               ]
             }
           ];
@@ -199,7 +243,8 @@ const Medications = () => {
               maxCapacity: 5,
               currentCapacity: 3,
               medications: [
-                { id: 3, name: "Metformin", dosage: "500mg", count: 3, time: "7:00 PM (3 days)" }
+                { id: 3, name: "Metformin", dosage: "500mg", count: 3, time: "7:00 PM (3 days)" },
+                { id: 4, name: "Atorvastatin", dosage: "20mg", count: 3, time: "7:00 PM (3 days)" }
               ]
             }
           ];
@@ -231,7 +276,8 @@ const Medications = () => {
               maxCapacity: 5,
               currentCapacity: 3,
               medications: [
-                { id: 4, name: "Metformin", dosage: "500mg", count: 3, time: "7:00 PM (3 days)" }
+                { id: 4, name: "Metformin", dosage: "500mg", count: 3, time: "7:00 PM (3 days)" },
+                { id: 5, name: "Atorvastatin", dosage: "20mg", count: 3, time: "7:00 PM (3 days)" }
               ]
             }
           ];
@@ -239,7 +285,6 @@ const Medications = () => {
     }
   };
 
-  // Metformin titration schedule data
   const metforminSchedule = [
     {
       id: 1,
@@ -278,8 +323,7 @@ const Medications = () => {
       refillFrequency: "May need to refill every 1-2 days"
     },
   ];
-  
-  // Other medications
+
   const otherMedications = [
     {
       id: 4,
@@ -292,6 +336,17 @@ const Medications = () => {
       compartment: "Morning Compartment",
       refillFrequency: "Refill every 5 days (sharing compartment with Metformin)"
     },
+    {
+      id: 5,
+      name: "Atorvastatin",
+      dosage: "20mg",
+      frequency: "Once daily",
+      times: ["7:00 PM"],
+      status: "upcoming",
+      notes: "For cholesterol management, take in the evening",
+      compartment: "Evening Compartment",
+      refillFrequency: "Refill every 5 days"
+    }
   ];
 
   const getStatusIcon = (status: string) => {
@@ -307,11 +362,10 @@ const Medications = () => {
     }
   };
 
-  // Calculate dates for the titration schedule
   const week1Start = new Date(startDate);
   const week2Start = addDays(new Date(startDate), 7);
   const week3Start = addDays(new Date(startDate), 14);
-  
+
   const formatDateRange = (start: Date, end: Date) => {
     return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
   };
