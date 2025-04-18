@@ -4,17 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Check, AlertCircle, Clock } from "lucide-react";
 import { CustomMedication } from "@/lib/types/medications";
 
+interface ScheduleItem {
+  id: number;
+  name: string;
+  dosage: string;
+  frequency: string;
+  times: string[];
+  status: string;
+  notes?: string;
+  week?: number;
+}
+
 interface TodayScheduleProps {
-  schedule: Array<{
-    id: number;
-    name: string;
-    dosage: string;
-    frequency: string;
-    times: string[];
-    status: string;
-    notes?: string;
-    week?: number;
-  }>;
+  schedule: ScheduleItem[];
   customMedications: CustomMedication[];
 }
 
@@ -32,7 +34,7 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
     }
   };
 
-  const combinedSchedule = [...schedule, 
+  const combinedSchedule: ScheduleItem[] = [...schedule, 
     ...customMedications.map(med => ({
       id: Number(med.id),
       name: med.name,
