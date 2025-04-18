@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,15 @@ const InitialSetup = () => {
       navigate("/");
     }
   }, [deviceMode, navigate]);
+
+  const handleSkip = () => {
+    localStorage.setItem("pillsureMode", deviceMode);
+    toast({
+      title: "Test mode activated",
+      description: "Skipped login for testing purposes"
+    });
+    navigate("/");
+  };
 
   const handleContinue = async () => {
     if (activeTab === "create") {
@@ -134,7 +144,7 @@ const InitialSetup = () => {
                 <p className="text-sm text-blue-800">
                   If you're just starting out, we recommend the Daily Dispensing mode. 
                   Daily refills help build a consistent medication routine and make it 
-                  easier to track your progress. You can always switch to 3-Day Supply 
+                  easier to track your progress. You can always switch to a 3-Day Supply 
                   mode later as you become more comfortable with your medication schedule.
                 </p>
               </div>
@@ -162,6 +172,11 @@ const InitialSetup = () => {
                     : "✓ Each compartment holds a 3-day supply of medications. Fewer refills required, best for experienced users with established routines."}
                 </p>
               </div>
+
+              {/* Add a skip button for testing purposes */}
+              <Button variant="outline" className="w-full mt-4" onClick={handleSkip}>
+                Skip Login (Testing Only)
+              </Button>
             </div>
           </CardContent>
         </Card>

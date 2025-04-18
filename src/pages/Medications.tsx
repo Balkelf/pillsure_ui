@@ -427,7 +427,7 @@ const Medications = () => {
           <TabsContent value="today" className="mt-4 space-y-4">
             {getTodaySchedule().concat(
               customMedications.map(med => ({
-                id: med.id,
+                id: Number(med.id),
                 name: med.name,
                 dosage: med.dosage,
                 frequency: med.frequency === 'once' ? 'Once daily' :
