@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Info } from "lucide-react";
-import { format } from "date-fns";
+import { Info, Check, AlertCircle, Clock } from "lucide-react";
+import { format, addDays } from "date-fns";
 import { CustomMedication } from "@/lib/types/medications";
 import { toast } from "@/hooks/use-toast";
 import AddMedicationForm from "@/components/medications/AddMedicationForm";

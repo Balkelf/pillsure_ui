@@ -60,7 +60,7 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
                 <h3 className="font-medium">{med.name} {med.dosage}</h3>
                 <p className="text-sm text-muted-foreground">
                   {med.frequency}
-                  {med.week && ` • Week ${med.week}`}
+                  {med.week !== undefined && ` • Week ${med.week}`}
                 </p>
                 {med.notes && (
                   <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
