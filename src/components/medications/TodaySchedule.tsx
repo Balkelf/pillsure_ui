@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Check, AlertCircle, Clock } from "lucide-react";
 import { CustomMedication } from "@/lib/types/medications";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { MedicationSchedule } from "@/lib/types/devices";
 
@@ -41,6 +40,9 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
     }
   };
 
+  // For now, we'll use the demo data since the Supabase schema doesn't include the medication_schedules table
+  // When you add the table to Supabase, you can uncomment and use this code
+  /*
   // Fetch medication schedule from Supabase if connected
   useEffect(() => {
     const fetchMedicationSchedule = async () => {
@@ -53,30 +55,30 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
           return;
         }
         
-        // Need to cast this to any until the Database type is updated
-        const { data, error } = await supabase
-          .from("medication_schedules")
-          .select("*")
-          .eq("user_id", userData.user.id)
-          .order("name") as any;
+        // Once the medication_schedules table is added to Supabase, uncomment this
+        // const { data, error } = await supabase
+        //   .from("medication_schedules")
+        //   .select("*")
+        //   .eq("user_id", userData.user.id)
+        //   .order("name");
           
-        if (error) throw error;
+        // if (error) throw error;
         
-        if (data && data.length > 0) {
-          // Map the data to our ScheduleItem format
-          const mappedData = (data as MedicationSchedule[]).map(item => ({
-            id: item.id,
-            name: item.name,
-            dosage: item.dosage || "",
-            frequency: item.frequency,
-            times: item.times || [],
-            status: item.status || "upcoming",
-            notes: item.notes,
-            week: item.week
-          }));
+        // if (data && data.length > 0) {
+        //   // Map the data to our ScheduleItem format
+        //   const mappedData = data.map(item => ({
+        //     id: item.id,
+        //     name: item.name,
+        //     dosage: item.dosage || "",
+        //     frequency: item.frequency,
+        //     times: item.times || [],
+        //     status: item.status || "upcoming",
+        //     notes: item.notes,
+        //     week: item.week
+        //   }));
           
-          setScheduledMeds(mappedData);
-        }
+        //   setScheduledMeds(mappedData);
+        // }
       } catch (error) {
         console.error("Error fetching medication schedule:", error);
         // Fallback to demo data
@@ -87,6 +89,7 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
     
     fetchMedicationSchedule();
   }, []);
+  */
 
   const combinedSchedule: ScheduleItem[] = [
     ...scheduledMeds,
@@ -115,28 +118,32 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
         prev.map(m => m.id === medId ? { ...m, status: "taken" } : m)
       );
       
+      // For now, we'll just show a toast since the Supabase schema doesn't include the medication_logs table
+      // When you add the tables to Supabase, you can uncomment and use this code
+      /*
       // Check if connected to Supabase
       const { data: userData } = await supabase.auth.getUser();
       
       if (userData.user) {
-        // Record the medication as taken - need to cast to any until Database type is updated
-        await supabase
-          .from("medication_logs")
-          .insert({
-            user_id: userData.user.id,
-            medication_id: medId,
-            schedule_id: typeof medId === 'string' ? medId : undefined,
-            status: "taken",
-            scheduled_time: new Date().toISOString(),
-            taken_time: new Date().toISOString()
-          }) as any;
+        // Record the medication as taken
+        // await supabase
+        //   .from("medication_logs")
+        //   .insert({
+        //     user_id: userData.user.id,
+        //     medication_id: medId,
+        //     schedule_id: typeof medId === 'string' ? medId : undefined,
+        //     status: "taken",
+        //     scheduled_time: new Date().toISOString(),
+        //     taken_time: new Date().toISOString()
+        //   });
           
         // Update the medication schedule status
-        await supabase
-          .from("medication_schedules")
-          .update({ status: "taken" })
-          .eq("id", medId) as any;
+        // await supabase
+        //   .from("medication_schedules")
+        //   .update({ status: "taken" })
+        //   .eq("id", medId);
       }
+      */
       
       toast.success(`${med.name} marked as taken`);
     } catch (error) {
@@ -156,27 +163,31 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
         prev.map(m => m.id === medId ? { ...m, status: "missed" } : m)
       );
       
+      // For now, we'll just show a toast since the Supabase schema doesn't include the medication_logs table
+      // When you add the tables to Supabase, you can uncomment and use this code
+      /*
       // Check if connected to Supabase
       const { data: userData } = await supabase.auth.getUser();
       
       if (userData.user) {
-        // Record the medication as skipped - need to cast to any until Database type is updated
-        await supabase
-          .from("medication_logs")
-          .insert({
-            user_id: userData.user.id,
-            medication_id: medId,
-            schedule_id: typeof medId === 'string' ? medId : undefined,
-            status: "missed",
-            scheduled_time: new Date().toISOString()
-          }) as any;
+        // Record the medication as skipped
+        // await supabase
+        //   .from("medication_logs")
+        //   .insert({
+        //     user_id: userData.user.id,
+        //     medication_id: medId,
+        //     schedule_id: typeof medId === 'string' ? medId : undefined,
+        //     status: "missed",
+        //     scheduled_time: new Date().toISOString()
+        //   });
           
         // Update the medication schedule status
-        await supabase
-          .from("medication_schedules")
-          .update({ status: "missed" })
-          .eq("id", medId) as any;
+        // await supabase
+        //   .from("medication_schedules")
+        //   .update({ status: "missed" })
+        //   .eq("id", medId);
       }
+      */
       
       toast.success(`${med.name} marked as skipped`);
     } catch (error) {

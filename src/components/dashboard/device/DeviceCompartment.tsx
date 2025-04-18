@@ -3,10 +3,10 @@ import { Pill, Clock, Plus, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CompartmentMedication } from "@/lib/types/devices";
+import { CompartmentMedication } from "@/lib/types/compartments";
 
 interface DeviceCompartmentProps {
-  id: string;
+  id: string | number;
   name: string;
   maxCapacity: number;
   currentCapacity: number;
@@ -15,7 +15,7 @@ interface DeviceCompartmentProps {
   isSelected: boolean;
   deviceMode: "daily" | "multiday";
   showDetails: boolean;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | number) => void;
 }
 
 export const DeviceCompartment = ({

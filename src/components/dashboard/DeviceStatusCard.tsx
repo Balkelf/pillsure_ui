@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
@@ -10,6 +11,8 @@ import { Device } from "@/lib/types/devices";
 import { DeviceHeader } from "./device/DeviceHeader";
 import { DeviceModeSection } from "./device/DeviceModeSection";
 import { DeviceCompartment } from "./device/DeviceCompartment";
+import { CompartmentStatus } from "@/lib/types/compartments";
+import { useNavigate } from "react-router-dom";
 
 interface DeviceStatusCardProps {
   className?: string;
@@ -210,6 +213,10 @@ const DeviceStatusCard = ({
       toast.dismiss();
       toast.error(`Sync failed: ${error.message}`);
     }
+  };
+
+  const handleConfigureClick = () => {
+    setConfigureMode(!configureMode);
   };
 
   if (loading) {
