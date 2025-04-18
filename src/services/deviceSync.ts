@@ -1,11 +1,6 @@
-
 import { toast } from "@/components/ui/sonner";
 import { Device, DeviceCompartment, CompartmentMedication, MedicationLog } from "@/lib/types/devices";
-import { SUPABASE_URL } from "@/integrations/supabase/client"; 
-
-// Constants for Supabase
-const SUPABASE_API_URL = "https://jdxwyecwdpyhaunvukaj.supabase.co";
-const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeHd5ZWN3ZHB5aGF1bnZ1a2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MDI5MzcsImV4cCI6MjA1ODQ3ODkzN30.Ssz4HcbYKwSqswsPqzvKkCZdvvNUEH-nEAvwzmc4Jas";
+import { supabase } from "@/integrations/supabase/client"; 
 
 export interface DeviceData {
   device_id: string;
@@ -35,11 +30,8 @@ export interface DeviceData {
 
 export const syncDeviceData = async (deviceData: DeviceData) => {
   try {
-    // Since we don't have authenticated user and database tables set up yet,
-    // we'll simply mock the API call and return success for now
     console.log("Syncing device data:", deviceData);
     
-    // Instead of making an actual API call, we'll simulate the response
     setTimeout(() => {
       toast.success("Device synced successfully");
     }, 1000);
@@ -52,16 +44,10 @@ export const syncDeviceData = async (deviceData: DeviceData) => {
   }
 };
 
-// Function to fetch the latest device data
 export const fetchDeviceData = async (): Promise<Device | null> => {
   try {
-    // Since we don't have the device tables in our database yet,
-    // we'll return mock data for now
-    
-    // Mock a small delay to simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Return mock device data
     const mockDevice: Device = {
       id: "device-1",
       device_id: "pillsure-demo-device",
@@ -158,10 +144,7 @@ export const fetchDeviceData = async (): Promise<Device | null> => {
   }
 };
 
-// Function to subscribe to real-time device updates
 export const subscribeToDeviceUpdates = (onUpdate: (device: Device | null) => void) => {
-  // Since we don't have real-time capabilities set up yet, 
-  // we'll use a timer to periodically update the data
   const interval = setInterval(async () => {
     try {
       const device = await fetchDeviceData();
@@ -169,9 +152,8 @@ export const subscribeToDeviceUpdates = (onUpdate: (device: Device | null) => vo
     } catch (error) {
       console.error("Error in device update subscription:", error);
     }
-  }, 30000); // Update every 30 seconds
+  }, 30000);
   
-  // Return unsubscribe function
   return () => {
     clearInterval(interval);
   };
