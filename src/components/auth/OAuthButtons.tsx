@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Apple, Google } from "lucide-react";
+import { Apple, Mail } from "lucide-react";
 
 interface OAuthButtonsProps {
   onGoogleLogin: () => void;
@@ -16,7 +16,7 @@ const OAuthButtons = ({ onGoogleLogin, onAppleLogin, className = "" }: OAuthButt
         className="flex items-center justify-center gap-2" 
         onClick={onGoogleLogin}
       >
-        <Google className="h-4 w-4" />
+        <Mail className="h-4 w-4" />
         <span>Continue with Google</span>
       </Button>
       <Button 
