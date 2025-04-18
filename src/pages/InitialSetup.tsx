@@ -99,11 +99,23 @@ const InitialSetup = () => {
           <CardHeader>
             <CardTitle>Device Configuration</CardTitle>
             <CardDescription>
-              Select how you want to configure your PillSure device
+              Choose how you want to organize your medication schedule
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-md border border-blue-100 mb-4">
+                <p className="text-sm text-blue-800 font-medium mb-2">
+                  💡 Recommendation for New Users
+                </p>
+                <p className="text-sm text-blue-800">
+                  If you're just starting out, we recommend the Daily Dispensing mode. 
+                  Daily refills help build a consistent medication routine and make it 
+                  easier to track your progress. You can always switch to 3-Day Supply 
+                  mode later as you become more comfortable with your medication schedule.
+                </p>
+              </div>
+
               <ToggleGroup
                 type="single"
                 value={deviceMode}
@@ -120,11 +132,11 @@ const InitialSetup = () => {
                 </ToggleGroupItem>
               </ToggleGroup>
 
-              <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-                <p className="text-sm text-blue-800">
+              <div className="bg-secondary/5 p-3 rounded-md">
+                <p className="text-sm text-muted-foreground">
                   {deviceMode === "daily"
-                    ? "Daily mode: Refill compartments each day for your daily medication needs."
-                    : "3-Day mode: Each compartment holds a 3-day supply of medications. Less frequent refills required."}
+                    ? "✓ Perfect for building habits - refill compartments each day for your daily medication needs. Ideal for new users and those building medication routines."
+                    : "✓ Each compartment holds a 3-day supply of medications. Fewer refills required, best for experienced users with established routines."}
                 </p>
               </div>
             </div>
