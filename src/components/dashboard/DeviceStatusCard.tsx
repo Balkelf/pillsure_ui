@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Battery, BatteryMedium, Box, Pill, CalendarDays, Clock, Settings, Plus, Minus, AlertCircle, CalendarClock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -15,9 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
+import { fetchDeviceData, subscribeToDeviceUpdates, syncDeviceData } from "@/services/deviceSync";
 
 interface MedicationInCompartment {
-  id: number;
+  id: string | number;
   name: string;
   dosage: string;
   count: number;
@@ -25,7 +25,7 @@ interface MedicationInCompartment {
 }
 
 interface CompartmentStatus {
-  id: number;
+  id: string | number;
   name: string;
   maxCapacity: number;
   currentCapacity: number;
@@ -42,8 +42,8 @@ interface DeviceStatusCardProps {
 
 const DeviceStatusCard = ({
   className,
-  batteryLevel = 75,
-  lastSync = "Today at 08:15 AM",
+  batteryLevel: defaultBatteryLevel = 75,
+  lastSync: defaultLastSync = "Today at 08:15 AM",
   startDate = "2023-04-10",
   onConfigureCompartments,
 }: DeviceStatusCardProps) => {
@@ -51,23 +51,90 @@ const DeviceStatusCard = ({
   const [configureMode, setConfigureMode] = useState(false);
   const [selectedMedication, setSelectedMedication] = useState("metformin");
   const [selectedCount, setSelectedCount] = useState("1");
-  const [selectedCompartment, setSelectedCompartment] = useState<number | null>(null);
+  const [selectedCompartment, setSelectedCompartment] = useState<number | string | null>(null);
   const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
   const [compartments, setCompartments] = useState<CompartmentStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [batteryLevel, setBatteryLevel] = useState(defaultBatteryLevel);
+  const [lastSync, setLastSync] = useState(defaultLastSync);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
   const navigate = useNavigate();
   
   useEffect(() => {
+    const loadDeviceData = async () => {
+      try {
+        setLoading(true);
+        const device = await fetchDeviceData();
+        
+        if (device) {
+          setDeviceId(device.device_id);
+          setBatteryLevel(device.battery_level || defaultBatteryLevel);
+          setDeviceMode(device.device_mode || "daily");
+          setLastSync(formatDateTime(device.last_sync) || defaultLastSync);
+          
+          const mappedCompartments = device.device_compartments.map(compartment => {
+            return {
+              id: compartment.id,
+              name: compartment.name,
+              maxCapacity: compartment.max_capacity,
+              currentCapacity: compartment.current_capacity,
+              medications: compartment.medications.map(med => ({
+                id: med.id,
+                name: med.name,
+                dosage: med.dosage || "",
+                count: med.count,
+                time: med.time || ""
+              }))
+            };
+          });
+          
+          setCompartments(mappedCompartments);
+        } else {
+          loadDefaultCompartments();
+        }
+      } catch (error) {
+        console.error("Error loading device data:", error);
+        loadDefaultCompartments();
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadDeviceData();
+    
+    const unsubscribe = subscribeToDeviceUpdates((device) => {
+      if (device) {
+        setBatteryLevel(device.battery_level || defaultBatteryLevel);
+        setDeviceMode(device.device_mode || "daily");
+        setLastSync(formatDateTime(device.last_sync) || defaultLastSync);
+        
+        if (!loading) {
+          setCompartments(getCompartments());
+        }
+      }
+    });
+    
+    return unsubscribe;
+  }, [defaultBatteryLevel, defaultLastSync]);
+  
+  const formatDateTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } catch (e) {
+      return dateString;
+    }
+  };
+  
+  const loadDefaultCompartments = () => {
     const savedMode = localStorage.getItem("pillsureMode") as "daily" | "multiday" | null;
     if (savedMode) {
       setDeviceMode(savedMode);
     }
-  }, []);
-
-  useEffect(() => {
-    // Update compartments whenever device mode changes
+    
     setCompartments(getCompartments());
-  }, [deviceMode]);
-
+  };
+  
   const getCompartments = () => {
     if (deviceMode === "daily") {
       return [
@@ -159,9 +226,53 @@ const DeviceStatusCard = ({
     }
   };
 
-  const handleSelectCompartment = (compartmentId: number) => {
+  const handleSelectCompartment = (compartmentId: number | string) => {
     setSelectedCompartment(selectedCompartment === compartmentId ? null : compartmentId);
   };
+
+  const handleManualSync = async () => {
+    try {
+      toast.loading("Syncing with device...");
+      
+      const deviceData = {
+        device_id: deviceId || "pillsure-demo-device",
+        battery_level: Math.floor(Math.random() * 30) + 70,
+        device_mode: deviceMode,
+        compartments: compartments.map(compartment => ({
+          name: compartment.name,
+          max_capacity: compartment.maxCapacity,
+          current_capacity: compartment.currentCapacity,
+          medications: compartment.medications.map(med => ({
+            name: med.name,
+            dosage: med.dosage,
+            count: med.count,
+            time: med.time,
+          }))
+        }))
+      };
+      
+      await syncDeviceData(deviceData);
+      toast.dismiss();
+      toast.success("Device synced successfully");
+      
+      setLastSync(formatDateTime(new Date().toISOString()));
+    } catch (error) {
+      toast.dismiss();
+      toast.error(`Sync failed: ${error.message}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className={cn("border-2 border-secondary/10 shadow-sm", className)}>
+        <CardContent className="p-4 flex justify-center items-center h-40">
+          <div className="animate-pulse text-center">
+            <p className="text-muted-foreground">Loading device data...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={cn("border-2 border-secondary/10 shadow-sm", className)}>
@@ -181,6 +292,9 @@ const DeviceStatusCard = ({
               {getBatteryIcon(batteryLevel)}
               <span className="ml-1 text-sm font-medium">{batteryLevel}%</span>
             </div>
+            <Button variant="ghost" size="icon" onClick={handleManualSync}>
+              <CalendarDays className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={handleConfigureClick}>
               <Settings className="h-5 w-5" />
             </Button>
