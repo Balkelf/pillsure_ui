@@ -1,52 +1,91 @@
-
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
-import { Bell, Calendar } from "lucide-react";
+import { User } from "lucide-react";
 import { Link } from "react-router-dom";
-import AdherenceCard from "@/components/dashboard/AdherenceCard";
-import NextMedicationCard from "@/components/dashboard/NextMedicationCard";
 import CareNetworkCard from "@/components/dashboard/CareNetworkCard";
 import MotivationalWidget from "@/components/dashboard/MotivationalWidget";
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
+import DailyCompartments from "@/components/dashboard/DailyCompartments";
+import InsightCard from "@/components/dashboard/InsightCard";
+import { useDeviceEventsContext } from "@/providers/DeviceEventsProvider";
+import { useEffect, useState } from "react";
+import { toast } from "@/components/ui/sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Dashboard = () => {
+  const { lastBoxEvent, lastButtonEvent } = useDeviceEventsContext();
+  const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
+  const [profileData, setProfileData] = useState<{
+    name: string;
+    email: string;
+    avatarUrl: string;
+  } | null>(null);
+
+  // Load profile data from localStorage
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('profileData');
+    if (savedProfile) {
+      try {
+        setProfileData(JSON.parse(savedProfile));
+      } catch (e) {
+        console.error('Failed to parse profile data from localStorage');
+      }
+    }
+  }, []);
+
+  // Show toast notification when a box is opened
+  useEffect(() => {
+    if (lastBoxEvent?.event === "opened") {
+      toast.info(`Box ${lastBoxEvent.boxId} was opened`, {
+        description: `Box ${lastBoxEvent.boxId} has been opened in your smart dispenser.`,
+      });
+    }
+  }, [lastBoxEvent]);
+
+  // Show toast notification when a button is pressed
+  useEffect(() => {
+    if (lastButtonEvent) {
+      const time = new Date(lastButtonEvent.timestamp).toLocaleTimeString();
+      toast.success(`Button Press Detected`, {
+        description: `A button was pressed on device ${lastButtonEvent.deviceId} at ${time}`,
+        duration: 5000,
+      });
+    }
+  }, [lastButtonEvent]);
+
+  // Get the user's first name for greeting
+  const firstName = profileData?.name ? profileData.name.split(' ')[0] : "Maria";
+
   return (
     <MobileLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Hi, Maria</h1>
-            <p className="text-muted-foreground">Let's keep you on track today</p>
-          </div>
-          <Button variant="outline" size="icon" className="rounded-full">
-            <Bell className="h-5 w-5" />
-          </Button>
-        </div>
-
-        <AdherenceCard />
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Next medication</h2>
-            <Link to="/medications">
-              <Button variant="ghost" size="sm" className="text-primary text-sm">
-                <Calendar className="mr-1 h-4 w-4" />
-                View all
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-foreground">Hi, {firstName}</h1>
+          <Link to="/profile">
+            {profileData?.avatarUrl ? (
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={profileData.avatarUrl} alt="Profile" />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {profileData.name.split(" ").map(n => n[0]).join("")}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <Button variant="ghost" size="icon" className="rounded-full" aria-label="Profile">
+                <User className="h-5 w-5" />
               </Button>
-            </Link>
-          </div>
-
-          <NextMedicationCard />
+            )}
+          </Link>
         </div>
 
         <DeviceStatusCard />
-        
+
+        <InsightCard />
+
+        <DailyCompartments deviceMode={deviceMode} />
+
         <MotivationalWidget />
 
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Your care network</h2>
-          <CareNetworkCard />
-        </div>
+        <CareNetworkCard />
       </div>
     </MobileLayout>
   );

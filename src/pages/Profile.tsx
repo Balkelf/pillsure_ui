@@ -1,30 +1,48 @@
-
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   Users,
-  Settings,
   HelpCircle,
   LogOut,
   ChevronRight,
   UserCog,
   Bell,
   Shield,
+  Smartphone,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProfileEditDialog from "@/components/profile/ProfileEditDialog";
 import { toast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 const Profile = () => {
   const [profileData, setProfileData] = useState({
     name: "Maria Anderson",
-    email: "maria.anderson@example.com"
+    email: "maria.anderson@example.com",
+    avatarUrl: ""
   });
 
+  // Load profile data from localStorage on initial render
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('profileData');
+    if (savedProfile) {
+      try {
+        setProfileData(JSON.parse(savedProfile));
+      } catch (e) {
+        console.error('Failed to parse profile data from localStorage');
+      }
+    }
+  }, []);
+
   const menuItems = [
+    {
+      icon: Smartphone,
+      title: "Pillsure Device",
+      description: "Setup your dispenser settings",
+      path: "/device-settings",
+    },
     {
       icon: Users,
       title: "Care Network",
@@ -57,8 +75,11 @@ const Profile = () => {
     },
   ];
 
-  const handleProfileUpdate = (name: string, email: string) => {
-    setProfileData({ name, email });
+  const handleProfileUpdate = (name: string, email: string, avatarUrl: string) => {
+    const updatedProfile = { name, email, avatarUrl };
+    setProfileData(updatedProfile);
+    // Save to localStorage for access by other components
+    localStorage.setItem('profileData', JSON.stringify(updatedProfile));
   };
 
   const handleLogout = () => {
@@ -74,51 +95,34 @@ const Profile = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Profile</h1>
-          <p className="text-muted-foreground">Manage your account and preferences</p>
+          <p className="text-muted-foreground font-light">Manage your account and preferences</p>
         </div>
 
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                  {profileData.name.split(" ").map(n => n[0]).join("")}
-                </AvatarFallback>
+                {profileData.avatarUrl ? (
+                  <AvatarImage src={profileData.avatarUrl} alt={profileData.name} />
+                ) : (
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                    {profileData.name.split(" ").map(n => n[0]).join("")}
+                  </AvatarFallback>
+                )}
               </Avatar>
               <div>
                 <h2 className="text-xl font-semibold">{profileData.name}</h2>
-                <p className="text-muted-foreground">{profileData.email}</p>
+                <p className="text-muted-foreground font-light">{profileData.email}</p>
               </div>
             </div>
             <div className="mt-4">
               <ProfileEditDialog 
                 name={profileData.name}
                 email={profileData.email}
+                avatarUrl={profileData.avatarUrl}
                 onSave={handleProfileUpdate}
                 trigger={<Button variant="outline" className="w-full">Edit Profile</Button>}
               />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Device Connection</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="bg-primary/10 p-2 rounded-full mr-3">
-                  <Settings className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Pillsure Smart Dispenser</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Connected · Last synced: 10 mins ago
-                  </p>
-                </div>
-              </div>
-              <Switch checked={true} />
             </div>
           </CardContent>
         </Card>
@@ -127,23 +131,25 @@ const Profile = () => {
           {menuItems.map((item) => (
             <Card key={item.title} className="overflow-hidden hover:bg-muted/50 transition-colors">
               <CardContent className="p-0">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start rounded-none h-auto py-4 px-4"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center">
-                      <div className="bg-primary/10 p-2 rounded-full mr-3">
-                        <item.icon className="h-5 w-5 text-primary" />
+                <Link to={item.path} className="w-full block">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start rounded-none h-auto py-4 px-4"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center">
+                        <div className="bg-primary/10 p-2 rounded-full mr-3">
+                          <item.icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="text-left">
+                          <h3 className="font-medium">{item.title}</h3>
+                          <p className="text-sm text-muted-foreground font-light">{item.description}</p>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <h3 className="font-medium">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground font-light" />
                     </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </Button>
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           ))}

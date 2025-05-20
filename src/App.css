@@ -1,8 +1,7 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .logo {
@@ -33,8 +32,42 @@
   }
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 .card {
-  padding: 2em;
+  @apply bg-card text-card-foreground rounded-lg shadow-sm p-4;
+  animation: fade-in 0.2s ease-out;
 }
 
 .read-the-docs {

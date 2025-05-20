@@ -34,7 +34,7 @@ export const DeviceModeSection = ({ deviceMode }: DeviceModeSectionProps) => {
               Change
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground font-light">
             {deviceMode === "daily" 
               ? "Refill compartments daily" 
               : "Each compartment holds a 3-day supply"}

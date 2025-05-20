@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Clock, MapPin, Edit } from "lucide-react";
@@ -6,17 +5,20 @@ import { SmartReminder } from "@/lib/types/reminders";
 import { Button } from "@/components/ui/button";
 import { scheduleReminder, cancelReminder } from "@/services/notifications";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface SmartReminderCardProps {
   reminder: SmartReminder;
   onToggle?: (id: string, active: boolean) => void;
   onEdit?: (id: string) => void;
+  className?: string;
 }
 
 const SmartReminderCard = ({ 
   reminder,
   onToggle,
-  onEdit
+  onEdit,
+  className
 }: SmartReminderCardProps) => {
   const { toast } = useToast();
   
@@ -47,7 +49,7 @@ const SmartReminderCard = ({
   };
 
   return (
-    <Card>
+    <Card className={className}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -64,22 +66,22 @@ const SmartReminderCard = ({
               )}
             </div>
             <div>
-              <h3 className="font-medium">
+              <h3 className="text-base font-medium leading-tight">
                 {reminder.smartType === 'location' ? reminder.location?.name : formatTime(reminder.time)}
               </h3>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-1">
                 {reminder.smartType === 'both' && (
                   <>
-                    <p className="text-sm text-muted-foreground">{formatTime(reminder.time)}</p>
-                    <span className="text-sm text-muted-foreground">•</span>
-                    <p className="text-sm text-muted-foreground">{reminder.location?.name}</p>
+                    <p className="text-sm text-muted-foreground font-light">{formatTime(reminder.time)}</p>
+                    <span className="text-sm text-muted-foreground font-light">•</span>
+                    <p className="text-sm text-muted-foreground font-light">{reminder.location?.name}</p>
                   </>
                 )}
                 {reminder.smartType === 'location' && (
-                  <p className="text-sm text-muted-foreground">Location-based reminder</p>
+                  <p className="text-sm text-muted-foreground font-light">Location-based reminder</p>
                 )}
                 {reminder.smartType === 'time' && (
-                  <p className="text-sm text-muted-foreground">Time-based reminder</p>
+                  <p className="text-sm text-muted-foreground font-light">Time-based reminder</p>
                 )}
               </div>
             </div>
@@ -89,7 +91,13 @@ const SmartReminderCard = ({
               checked={reminder.active} 
               onCheckedChange={(checked) => handleToggle(reminder.id, checked)} 
             />
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit?.(reminder.id)}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 rounded-full" 
+              onClick={() => onEdit?.(reminder.id)}
+              aria-label="Edit reminder"
+            >
               <Edit className="h-4 w-4" />
             </Button>
           </div>

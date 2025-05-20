@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +10,10 @@ import Insights from "./pages/Insights";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import InitialSetup from "./pages/InitialSetup";
+import Notifications from "./pages/Notifications";
+import DeviceSettings from "./pages/DeviceSettings";
 import { useEffect, useState } from "react";
+import { DeviceEventsProvider } from "./providers/DeviceEventsProvider";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,7 @@ const HasCompletedSetup = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <DeviceEventsProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -46,11 +49,14 @@ const App = () => (
           <Route path="/reminders" element={<HasCompletedSetup><Reminders /></HasCompletedSetup>} />
           <Route path="/insights" element={<HasCompletedSetup><Insights /></HasCompletedSetup>} />
           <Route path="/profile" element={<HasCompletedSetup><Profile /></HasCompletedSetup>} />
+          <Route path="/notifications" element={<HasCompletedSetup><Notifications /></HasCompletedSetup>} />
+          <Route path="/device-settings" element={<HasCompletedSetup><DeviceSettings /></HasCompletedSetup>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    </DeviceEventsProvider>
   </QueryClientProvider>
 );
 

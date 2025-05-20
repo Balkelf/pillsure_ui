@@ -1,0 +1,48 @@
+/* 
+ * Simple Sans Font
+ * 
+ * NOTE: This file is a template for when you acquire the actual Simple Sans font files.
+ * Replace the URLs with the actual paths to your font files once you have them.
+ * 
+ * For now, the system will fall back to the system-ui and sans-serif fonts.
+ */
+
+/*
+@font-face {
+  font-family: 'Simple Sans';
+  src: url('/fonts/SimpleSans-Regular.woff2') format('woff2'),
+       url('/fonts/SimpleSans-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Simple Sans';
+  src: url('/fonts/SimpleSans-Medium.woff2') format('woff2'),
+       url('/fonts/SimpleSans-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Simple Sans';
+  src: url('/fonts/SimpleSans-SemiBold.woff2') format('woff2'),
+       url('/fonts/SimpleSans-SemiBold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Simple Sans';
+  src: url('/fonts/SimpleSans-Bold.woff2') format('woff2'),
+       url('/fonts/SimpleSans-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+*/
+
+/* Inconsolata is already loaded via Google Fonts in index.css */ 

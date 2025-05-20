@@ -1,33 +1,19 @@
-
-import { Pill, Clock, Plus, Minus } from "lucide-react";
+import { Pill } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { CompartmentMedication } from "@/lib/types/compartments";
+import { CompartmentStatus } from "@/lib/types/compartments";
 
 interface DeviceCompartmentProps {
-  id: string | number;
-  name: string;
-  maxCapacity: number;
-  currentCapacity: number;
-  medications: CompartmentMedication[];
-  isConfigureMode: boolean;
+  compartment: CompartmentStatus;
+  configureMode: boolean;
   isSelected: boolean;
-  deviceMode: "daily" | "multiday";
-  showDetails: boolean;
-  onSelect: (id: string | number) => void;
+  onSelect: () => void;
 }
 
 export const DeviceCompartment = ({
-  id,
-  name,
-  maxCapacity,
-  currentCapacity,
-  medications,
-  isConfigureMode,
+  compartment,
+  configureMode,
   isSelected,
-  deviceMode,
-  showDetails,
   onSelect,
 }: DeviceCompartmentProps) => {
   const getCompartmentColorClass = (current: number, max: number) => {
@@ -40,69 +26,32 @@ export const DeviceCompartment = ({
   return (
     <div 
       className={`border rounded-md p-3 space-y-2 ${isSelected ? "border-primary" : ""}`}
-      onClick={() => isConfigureMode && onSelect(id)}
+      onClick={configureMode ? onSelect : undefined}
     >
       <div className="flex justify-between items-center">
         <div className="flex items-center">
           <Pill className="h-4 w-4 mr-1 text-primary" />
-          <span className="font-medium">{name} Compartment</span>
-          {medications.length > 0 && (
+          <span className="font-medium">{compartment.name}</span>
+          {compartment.medications.length > 0 && (
             <Badge variant="outline" className="ml-2 text-xs">
-              {medications[0].name}
+              {compartment.medications[0].name}
             </Badge>
           )}
         </div>
         <span className="text-sm">
-          {currentCapacity}/{maxCapacity} tablets
+          {compartment.currentCapacity}/{compartment.maxCapacity} tablets
         </span>
       </div>
       
-      {showDetails && medications.map((med) => (
-        <div key={med.id} className="flex justify-between items-center text-sm pl-5">
-          <div className="flex items-center">
-            <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
-            <span>
-              {med.name} {med.dosage} ({med.time})
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {med.count} tablet{med.count > 1 ? 's' : ''}
-              {deviceMode === "multiday" && " (3-day supply)"}
-            </span>
-            {isConfigureMode && isSelected && (
-              <div className="flex items-center">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6"
-                  disabled={med.count <= 1}
-                >
-                  <Minus className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6"
-                  disabled={currentCapacity >= maxCapacity}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-      
       <Progress
-        value={(currentCapacity / maxCapacity) * 100}
+        value={(compartment.currentCapacity / compartment.maxCapacity) * 100}
         className="h-2"
-        indicatorClassName={getCompartmentColorClass(currentCapacity, maxCapacity)}
+        indicatorClassName={getCompartmentColorClass(compartment.currentCapacity, compartment.maxCapacity)}
       />
       
-      {currentCapacity >= maxCapacity && (
+      {compartment.currentCapacity >= compartment.maxCapacity && (
         <p className="text-xs text-orange-600">
-          Compartment at max capacity (5 tablets)
+          Compartment at max capacity ({compartment.maxCapacity} tablets)
         </p>
       )}
     </div>

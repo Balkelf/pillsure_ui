@@ -66,14 +66,14 @@ const ScheduleView = ({
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">{med.frequency}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground font-light">{med.frequency}</p>
+                <p className="text-xs text-muted-foreground font-light">
                   {med.week === 1 && formatDateRange(week1Start, addDays(week1Start, 6))}
                   {med.week === 2 && formatDateRange(week2Start, addDays(week2Start, 6))}
                   {med.week === 3 && `From ${format(week3Start, 'MMM d, yyyy')} onwards`}
                 </p>
                 {med.notes && (
-                  <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
+                  <p className="text-xs text-muted-foreground font-light mt-1">{med.notes}</p>
                 )}
               </div>
             </div>
@@ -91,9 +91,9 @@ const ScheduleView = ({
               </div>
               <div className="flex-1">
                 <h3 className="font-medium">{med.name} {med.dosage}</h3>
-                <p className="text-sm text-muted-foreground">{med.frequency}</p>
+                <p className="text-sm text-muted-foreground font-light">{med.frequency}</p>
                 {med.notes && (
-                  <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
+                  <p className="text-xs text-muted-foreground font-light mt-1">{med.notes}</p>
                 )}
               </div>
             </div>

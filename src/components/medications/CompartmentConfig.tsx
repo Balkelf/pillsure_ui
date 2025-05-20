@@ -35,7 +35,7 @@ const CompartmentConfig = ({
   return (
     <div className="space-y-4">
       <h3 className="text-md font-medium">Configure Device Compartments</h3>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground font-light">
         Each compartment can hold up to 5 tablets of a single medication type. Configure separate compartments for each medication.
       </p>
       

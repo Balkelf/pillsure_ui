@@ -1,5 +1,5 @@
-
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useHealthData } from "@/hooks/useHealthData";
 import HealthWidgetHeader from "./HealthWidgetHeader";
@@ -30,7 +30,7 @@ const MotivationalWidget = ({
   // Generate a personalized motivational message based on health data
   const getPersonalizedMessage = () => {
     if (!healthData.isConnected) {
-      return "Connect your fitness tracker to get personalized health insights";
+      return ""; // Return empty string when not connected
     }
     
     if (healthData.motivationalMessage) {
@@ -49,7 +49,7 @@ const MotivationalWidget = ({
   };
 
   return (
-    <Card className={`border-2 border-secondary/10 shadow-sm ${className}`}>
+    <Card className={`border shadow-sm ${className}`}>
       <CardHeader className="px-4 py-3">
         <HealthWidgetHeader
           isConnected={healthData.isConnected}
@@ -75,22 +75,25 @@ const MotivationalWidget = ({
             />
             
             <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground font-light">
                 Last updated: {new Date().toLocaleTimeString()}
               </span>
-              <button 
-                className="text-xs text-secondary hover:underline"
+              <Button 
+                variant="link"
+                className="text-xs text-secondary p-0 h-auto"
                 onClick={handleDisconnect}
               >
                 Disconnect
-              </button>
+              </Button>
             </div>
           </div>
         )}
 
-        <p className="text-sm pt-3">
-          {getPersonalizedMessage()}
-        </p>
+        {getPersonalizedMessage() && (
+          <p className="text-sm pt-3">
+            {getPersonalizedMessage()}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

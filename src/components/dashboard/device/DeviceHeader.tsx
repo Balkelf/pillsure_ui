@@ -1,22 +1,41 @@
-
-import { Battery, BatteryMedium, Box, CalendarDays, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Battery, BatteryMedium, BatteryCharging, BatteryWarning } from "lucide-react";
 
 interface DeviceHeaderProps {
-  batteryLevel: number;
+  batteryLevel: number | null;
   lastSync: string;
-  onManualSync: () => void;
-  onConfigureClick: () => void;
+  isCharging?: boolean;
+  serialNumber?: string;
 }
 
 export const DeviceHeader = ({
   batteryLevel,
   lastSync,
-  onManualSync,
-  onConfigureClick,
+  isCharging = false,
+  serialNumber = "Unknown",
 }: DeviceHeaderProps) => {
-  const getBatteryIcon = (level: number) => {
-    if (level <= 20) {
+  // Improved checking for unknown/invalid battery level
+  // First explicitly convert to number if it's not null
+  const numericBattery = batteryLevel !== null ? Number(batteryLevel) : null;
+  
+  // Now check if it's a valid number
+  const isUnknown = numericBattery === null || isNaN(numericBattery);
+  
+  // Only use the level for icons if it's not unknown
+  const safeLevel = isUnknown ? null : numericBattery;
+  
+  // Log what we're displaying for debugging
+  console.log(`DeviceHeader: battery=${batteryLevel}, safeLevel=${safeLevel}, isUnknown=${isUnknown}, isCharging=${isCharging}`);
+  
+  const getBatteryIcon = (level: number | null, charging: boolean) => {
+    if (charging) {
+      return <BatteryCharging className="h-5 w-5 text-green-500" />;
+    } else if (level === null) {
+      // Unknown battery level
+      return <BatteryWarning className="h-5 w-5 text-orange-500" />;
+    } else if (level === 0) {
+      // Special case for 0% battery
+      return <Battery className="h-5 w-5 text-red-700" />;
+    } else if (level <= 20) {
       return <Battery className="h-5 w-5 text-red-500" />;
     } else if (level <= 50) {
       return <BatteryMedium className="h-5 w-5 text-orange-400" />;
@@ -26,28 +45,22 @@ export const DeviceHeader = ({
   };
 
   return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center">
-        <div className="bg-secondary/10 p-2 rounded-full mr-3">
-          <Box className="h-5 w-5 text-secondary" />
-        </div>
-        <div>
-          <h3 className="font-medium">PillSure Device</h3>
-          <p className="text-sm text-muted-foreground">Last synced: {lastSync}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col mb-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium">PillSure Device</h3>
         <div className="flex items-center">
-          {getBatteryIcon(batteryLevel)}
-          <span className="ml-1 text-sm font-medium">{batteryLevel}%</span>
+          {getBatteryIcon(safeLevel, isCharging)}
+          <span className={`ml-1 text-sm font-medium ${
+            isUnknown ? 'text-orange-500' : 
+            safeLevel === 0 ? 'text-red-700' : ''
+          }`}>
+            {isUnknown ? 'Unknown' : `${safeLevel}%`}
+            {isCharging && " (Charging)"}
+          </span>
         </div>
-        <Button variant="ghost" size="icon" onClick={onManualSync}>
-          <CalendarDays className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={onConfigureClick}>
-          <Settings className="h-5 w-5" />
-        </Button>
       </div>
+      <p className="text-xs text-muted-foreground mt-1">S/N: {serialNumber}</p>
+      <p className="text-sm text-muted-foreground font-light">Last synced: {lastSync}</p>
     </div>
   );
 };

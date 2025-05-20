@@ -46,8 +46,8 @@ const HealthMetricsTabs = ({
           ></div>
         </div>
         <div className="flex justify-between text-sm mt-1">
-          <span className="text-muted-foreground">{steps} steps</span>
-          <span className="text-muted-foreground">Goal: {stepGoal}</span>
+          <span className="text-muted-foreground font-light">{steps} steps</span>
+          <span className="text-muted-foreground font-light">Goal: {stepGoal}</span>
         </div>
       </TabsContent>
       
@@ -62,7 +62,7 @@ const HealthMetricsTabs = ({
           </div>
           <div className="flex-1">
             <Progress value={Math.min(100, activeMinutes * 2)} className="h-2" indicatorClassName="bg-blue-500" />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground font-light mt-1">
               {activeMinutes >= 30 ? "Excellent!" : "Try for 30+ minutes daily"}
             </p>
           </div>
@@ -80,7 +80,7 @@ const HealthMetricsTabs = ({
           </div>
           <div className="flex-1">
             <Progress value={Math.min(100, caloriesBurned / 5)} className="h-2" indicatorClassName="bg-orange-500" />
-            <p className="text-xs text-muted-foreground mt-1">Based on your activity today</p>
+            <p className="text-xs text-muted-foreground font-light mt-1">Based on your activity today</p>
           </div>
         </div>
       </TabsContent>
@@ -100,7 +100,7 @@ const HealthMetricsTabs = ({
               className="h-2" 
               indicatorClassName={`${impactScore >= 80 ? 'bg-green-500' : impactScore >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} 
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground font-light mt-1">
               {impactScore >= 80 
                 ? "Excellent! Activity + Medication = Success" 
                 : "Activity can improve medication effectiveness"}

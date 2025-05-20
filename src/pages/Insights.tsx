@@ -1,4 +1,3 @@
-
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -124,7 +123,7 @@ const Insights = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Insights</h1>
-          <p className="text-muted-foreground">Track your health progress</p>
+          <p className="text-muted-foreground font-light">Track your health progress</p>
         </div>
 
         <Tabs defaultValue="adherence">
@@ -138,11 +137,11 @@ const Insights = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Weekly Overview</h2>
               <div className="flex items-center">
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon-sm" className="rounded-full">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="text-sm">Apr 11 - Apr 17</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon-sm" className="rounded-full">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -171,8 +170,8 @@ const Insights = () => {
                     <div className="bg-primary/10 p-2 rounded-full mb-2">
                       <Calendar className="h-5 w-5 text-primary" />
                     </div>
-                    <span className="text-sm text-muted-foreground">Weekly average</span>
-                    <span className="text-2xl font-bold">{weeklyAverage.toFixed(0)}%</span>
+                    <span className="text-sm text-muted-foreground font-light">Weekly average</span>
+                    <span className="text-lg font-semibold mt-1">{weeklyAverage.toFixed(0)}%</span>
                   </div>
                 </CardContent>
               </Card>
@@ -182,8 +181,8 @@ const Insights = () => {
                     <div className="bg-secondary/10 p-2 rounded-full mb-2">
                       <Award className="h-5 w-5 text-secondary" />
                     </div>
-                    <span className="text-sm text-muted-foreground">Current streak</span>
-                    <span className="text-2xl font-bold">{currentStreak} days</span>
+                    <span className="text-sm text-muted-foreground font-light">Current streak</span>
+                    <span className="text-lg font-semibold mt-1">{currentStreak} days</span>
                   </div>
                 </CardContent>
               </Card>
@@ -193,7 +192,7 @@ const Insights = () => {
           <TabsContent value="health" className="mt-4 space-y-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
+                <CardTitle className="text-lg font-semibold leading-tight flex items-center">
                   <Activity className="mr-2 h-5 w-5 text-secondary" />
                   Daily Step Count
                 </CardTitle>
@@ -219,7 +218,7 @@ const Insights = () => {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
+                <CardTitle className="text-lg font-semibold leading-tight flex items-center">
                   <TrendingUp className="mr-2 h-5 w-5 text-primary" />
                   Blood Glucose Levels
                 </CardTitle>
@@ -247,7 +246,7 @@ const Insights = () => {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
+                <CardTitle className="text-lg font-semibold leading-tight flex items-center">
                   <TrendingUp className="mr-2 h-5 w-5 text-secondary" />
                   Blood Pressure
                 </CardTitle>
@@ -277,13 +276,13 @@ const Insights = () => {
           <TabsContent value="correlation" className="mt-4 space-y-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
+                <CardTitle className="text-lg font-semibold leading-tight flex items-center">
                   <Heart className="mr-2 h-5 w-5 text-red-500" />
                   Medication + Activity Impact
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground font-light mb-4 leading-normal">
                   The chart below shows how your physical activity correlates with your medication adherence,
                   and the resulting health impact score.
                 </p>
@@ -298,71 +297,23 @@ const Insights = () => {
                   >
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                       <CartesianGrid />
-                      <XAxis 
-                        type="number" 
-                        dataKey="adherence" 
-                        name="Adherence" 
-                        unit="%" 
-                        domain={[0, 100]} 
-                        label={{ value: 'Adherence (%)', position: 'bottom', offset: 0 }}
-                      />
-                      <YAxis 
-                        type="number" 
-                        dataKey="steps" 
-                        name="Steps" 
-                        label={{ value: 'Steps', angle: -90, position: 'left' }}
-                      />
-                      <ZAxis 
-                        type="number" 
-                        dataKey="impactScore" 
-                        range={[60, 400]} 
-                        name="Impact Score" 
-                      />
-                      <ChartTooltip 
-                        cursor={{ strokeDasharray: '3 3' }}
-                        content={
-                          <ChartTooltipContent 
-                            formatter={(value, name) => {
-                              if (name === "impactScore") return [`${value} points`, "Impact Score"];
-                              if (name === "adherence") return [`${value}%`, "Adherence"];
-                              if (name === "steps") return [value, "Steps"];
-                              return [value, name];
-                            }}
-                          />
-                        }
-                      />
+                      <XAxis type="number" dataKey="steps" name="Steps" />
+                      <YAxis type="number" dataKey="adherence" name="Adherence %" />
+                      <Tooltip cursor={{ strokeDasharray: '3 3' }} />
                       <Scatter 
-                        name="Values" 
+                        name="Health Impact" 
                         data={correlationData} 
                         fill="hsl(var(--primary))" 
                       />
                     </ScatterChart>
                   </ChartContainer>
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <div className="p-2 bg-primary/10 rounded-md">
-                    <p className="text-xs text-muted-foreground">Adherence</p>
-                    <p className="font-medium">{weeklyAverage.toFixed(0)}%</p>
-                  </div>
-                  <div className="p-2 bg-secondary/10 rounded-md">
-                    <p className="text-xs text-muted-foreground">Avg. Steps</p>
-                    <p className="font-medium">
-                      {Math.round(healthActivityData.reduce((sum, day) => sum + day.steps, 0) / healthActivityData.length).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="p-2 bg-red-100 rounded-md">
-                    <p className="text-xs text-muted-foreground">Impact Score</p>
-                    <p className="font-medium">
-                      {Math.round(correlationData.reduce((sum, day) => sum + day.impactScore, 0) / correlationData.length)}
-                    </p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
+                <CardTitle className="text-lg font-semibold leading-tight flex items-center">
                   <TrendingUp className="mr-2 h-5 w-5 text-blue-500" />
                   Daily Comparison
                 </CardTitle>
@@ -384,7 +335,7 @@ const Insights = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <p className="text-sm text-muted-foreground mt-4">
+                <p className="text-sm text-muted-foreground font-light mt-4">
                   Higher medication adherence combined with regular physical activity leads to better health outcomes 
                   and improved medication effectiveness. Aim for consistency in both areas.
                 </p>

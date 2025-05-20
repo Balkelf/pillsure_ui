@@ -1,0 +1,386 @@
+PillSure Mobile UI Style Guide
+
+Figure: Example of the minimalist mobile UI style inspiration. The PillSure app UI uses a clean, modern aesthetic with generous white space and clear hierarchy. It leverages Shadcn UI (Radix-based components with Tailwind CSS) for flexible, accessible elements ￼. The design is mobile-first: apply unprefixed Tailwind classes for smartphones and add sm:, md: modifiers at breakpoints ￼. Colors are used sparingly (neutral surfaces with a single accent), and typography is scaled for readability on small screens. All components have a simple, functional look.
+
+1. Typography
+	•	Font families: Use Simple Sans as the default UI font and Inconsolata for code or data. In tailwind.config.js set something like:
+
+module.exports = {
+  theme: {
+    fontFamily: {
+      sans: ['Simple Sans', 'system-ui', 'sans-serif'],
+      mono: ['Inconsolata', 'Courier New', 'monospace'],
+    },
+  }
+}
+
+Use the font-sans and font-mono utilities to apply these.
+
+	•	Font sizes: Follow Tailwind's scale. For example, use text-base (1rem, ~16px) for body text, text-lg (~1.125rem) for subheads, and text-xl, text-2xl, etc. for titles. Adjust with responsive prefixes as needed (e.g. sm:text-xl on larger screens). A quick reference: text-sm (0.875rem), text-base (1rem), text-lg (1.125rem), text-xl (1.25rem), text-2xl (1.5rem), etc.
+	•	Font weight: Use font-normal or font-medium for most text. Apply font-semibold or font-bold for headings and emphasis. For instance, <h1 className="text-2xl font-semibold">…</h1>.
+	•	Line height: Ensure comfortable reading by using leading-relaxed (e.g. 1.625) or leading-normal for body text. Headlines can use tighter leading (e.g. leading-snug).
+	•	Token mapping: Tailwind's font-size utilities map to rem units, so text scales with user settings. For example, text-base = 16px (if base font is 16px) and grows on larger devices. Always use relative units (rem) via Tailwind to respect accessibility and user preferences.
+
+2. Color System
+	•	Semantic palette: Define colors by purpose rather than hue. In tailwind.config.js, extend the theme with names like primary, secondary, success, error, warning, plus a neutral grayscale (e.g. neutral-100…neutral-900) and semantic roles like surface/on-surface. For example:
+
+module.exports = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        primary: { DEFAULT: '#4C9AFF', light: '#85BBFF', dark: '#0050C9' },
+        secondary: { DEFAULT: '#FFD93B', light: '#FFEB77', dark: '#E6C200' },
+        success: { DEFAULT: '#4CAF50' },
+        error:   { DEFAULT: '#E53935' },
+        neutral: {
+          100: '#F3F4F6', 200: '#E5E7EB', 300: '#D1D5DB',
+          400: '#9CA3AF', 500: '#6B7280', 600: '#4B5563',
+          700: '#374151', 800: '#1F2937', 900: '#111827'
+        },
+        surface:       { light: '#FFFFFF',  dark: '#111827' },
+        'on-surface':  { light: '#111827',  dark: '#F9FAFB' }
+      }
+    }
+  }
+}
+
+Use these tokens in classes: e.g. bg-primary for a primary button, text-on-surface for text on backgrounds. This makes intent clear. As recommended, prefer semantic names (primary, error) over raw colors ￼ ￼. For instance, don't use bg-red-600 directly; instead use bg-error or bg-error-primary ￼ ￼.
+
+	•	State & variants: Define hover/focus versions by adding -hover, -active variants, or use Tailwind's hover: prefix. E.g. primary-hover: '#3385FF'. You can also rely on Tailwind's built-in shade scales (like primary-600, primary-700) or CSS dark: mode.
+	•	Dark mode: Enable darkMode: 'class' in Tailwind config. For dark theme, invert surfaces: e.g. bg-surface -> dark:bg-surface-dark. Ensure text on dark backgrounds uses the light on-surface color. Tailwind allows dark:bg-neutral-800 or similar to switch neutrals. Maintain similar semantic names for colors in dark mode, and use the dark: prefix (e.g. bg-white dark:bg-neutral-900).
+	•	Consistency: Set a small number of core colors and reuse them. Tailwind ships strong palettes, but naming them semantically early avoids confusion ￼ ￼. Always apply the most-semantic name: e.g. use bg-error-primary instead of a hardcoded red ￼ ￼. This ensures easy theming and consistency.
+
+3. Layout & Spacing
+	•	Tailwind spacing scale: Tailwind's spacing goes from 0 to 96 (0px–24rem) in 0.25rem increments ￼. For example, p-4 = 1rem (16px), m-2 = 0.5rem (8px). Use these for padding, margin, gap, etc. Extend theme.spacing if you need larger values (e.g. '128': '32rem').
+	•	Mobile-first & grid: Build layouts mobile-first. On small screens, stack content (e.g. grid-cols-1). Then at sm: or md: breakpoints, change to multiple columns. For instance:
+
+<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 px-4">
+  <!-- two-column layout on >=640px -->
+</div>
+
+A 12-column grid (grid-cols-12) is also common for flexible layouts. Use gap-4 or gap-6 for gutters between grid cells.
+
+	•	Flexbox: For simpler layouts, use flex utilities. E.g. <div className="flex flex-col sm:flex-row gap-4">...</div> for responsive stacking, or justify-between/justify-around for navigation bars.
+	•	Containers & margins: Wrap major sections in a centered container (e.g. <main className="max-w-screen-lg mx-auto px-4">). Use consistent side padding (px-4 or px-6) on mobile to keep content inset. Use mt-# and mb-# to space sections vertically. For example, a heading might have mb-4, and paragraphs might use space-y-4 between them.
+	•	Example: A common pattern is: px-4 sm:px-6 on containers, py-2 or py-4 between rows. For a two-column grid with gutters:
+
+<div className="grid grid-cols-1 gap-6 sm:grid-cols-3 md:grid-cols-4">
+  <div>...</div><div>...</div><div>...</div>
+</div>
+
+
+	•	Summary: Stick to the defined spacing tokens; do not use arbitrary pixel values. Consistency ensures a clear, scalable rhythm.
+
+4. Components
+
+Card
+
+Figure: Example of a summary card UI. Cards group related info on a neutral surface. Style a card with a light background, rounded corners and subtle shadow. For example:
+
+<div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4">
+  <h3 className="text-xl font-semibold mb-2">Card Title</h3>
+  <p className="text-sm text-neutral-600">Some content or summary goes here.</p>
+</div>
+
+Use bg-surface (white) and dark:bg-surface-dark (dark gray) for backgrounds, plus text-on-surface. For borders, use the standard border class which leverages the --border (214 20% 94%) color variable for a subtle, consistent appearance. Keep text and elements well-padded (p-4 or p-6). Cards may contain headings, body text, icons, etc., arranged with standard Tailwind spacing classes. Radix doesn't have a Card primitive, so just use a styled <div> or create a reusable Card component with these classes.
+
+Button
+
+Buttons are primary interactive elements. Define variants:
+	•	Primary button: Bold background in primary color, white text. Example:
+
+<button className="px-4 py-2 bg-primary text-white font-medium rounded hover:bg-primary-light transition">
+  Primary
+</button>
+
+Add focus styles: focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary. For disabled state, add opacity-50 cursor-not-allowed.
+
+	•	Secondary button: Often a lighter or neutral style. Example:
+
+<button className="px-4 py-2 bg-gray-100 text-neutral-700 rounded hover:bg-gray-200 transition">
+  Secondary
+</button>
+
+
+	•	Outline/ghost button: White or transparent background with colored text/border. Example:
+
+<button className="px-3 py-2 border border-primary text-primary rounded hover:bg-primary-light hover:text-white transition">
+  Cancel
+</button>
+
+
+	•	Icon buttons: For toolbar icons, use a transparent background with padding. Include the icon (e.g. Heroicon) inside. Example:
+
+<button className="p-2 bg-transparent hover:bg-gray-100 rounded">
+  <SearchIcon className="w-5 h-5 text-neutral-600" />
+</button>
+
+Add aria-label for accessibility if there is no text label.
+
+	•	Radix/Shadcn integration: Shadcn UI provides a <Button> component that wraps styling (e.g. variant="default" size="lg"). If using Radix primitives, use the asChild prop to render a styled <button>. For example, in a dialog close:
+
+<Dialog.Close asChild>
+  <button className="px-2 py-1 bg-red-500 text-white rounded">Close</button>
+</Dialog.Close>
+
+This ensures the Radix trigger (Close) uses your Tailwind-styled button ￼.
+
+Tabs
+
+Use Radix Tabs (@radix-ui/react-tabs or Shadcn Tabs). Style the tab list and triggers:
+
+<Tabs.Root defaultValue="tab1">
+  <Tabs.List className="flex space-x-4 border-b border-neutral-200">
+    <Tabs.Trigger value="tab1" className="pb-2 data-[state=active]:border-b-2 data-[state=active]:border-primary">
+      Tab 1
+    </Tabs.Trigger>
+    <Tabs.Trigger value="tab2" className="pb-2 data-[state=active]:border-b-2 data-[state=active]:border-primary">
+      Tab 2
+    </Tabs.Trigger>
+  </Tabs.List>
+  <Tabs.Content value="tab1" className="p-4">Content for Tab 1</Tabs.Content>
+  <Tabs.Content value="tab2" className="p-4">Content for Tab 2</Tabs.Content>
+</Tabs.Root>
+
+	•	Styling: Use a bottom border to indicate active tab (border-primary-600 when active via Radix's data-state=active selector). Inactive tabs can have text-neutral-600. Always match font sizes for tab labels.
+	•	Accessibility: Radix handles keyboard navigation (arrow keys) and ARIA roles automatically.
+
+Navigation Bar
+
+Whether top or bottom, navigation bars group key app sections:
+	•	Bottom nav (mobile): A fixed footer with icon buttons. Example:
+
+<nav className="fixed bottom-0 w-full bg-white dark:bg-neutral-900 border-t border-neutral-200 p-2">
+  <div className="flex justify-around">
+    <button className="flex flex-col items-center text-neutral-600 hover:text-primary">
+      <HomeIcon className="w-6 h-6" />
+      <span className="text-xs">Home</span>
+    </button>
+    <button className="flex flex-col items-center text-neutral-600 hover:text-primary">
+      <ChartBarIcon className="w-6 h-6" />
+      <span className="text-xs">Stats</span>
+    </button>
+    <!-- more buttons... -->
+  </div>
+</nav>
+
+Ensure ample tap target (44px+ high), center icons above labels, and highlight the active section (e.g. use text-primary).
+
+	•	Top nav (mobile/tablet): A fixed header with a title and possibly a menu icon:
+
+<header className="flex items-center justify-between h-12 px-4 bg-white dark:bg-neutral-900 border-b border-neutral-200">
+  <button><MenuIcon className="w-6 h-6 text-neutral-700" /></button>
+  <h1 className="text-lg font-medium">Page Title</h1>
+  <button><UserIcon className="w-6 h-6 text-neutral-700" /></button>
+</header>
+
+Use justify-between to space elements, and ensure contrast on background.
+
+Bottom Sheet / Drawer
+
+A bottom sheet is a modal that slides from the bottom. You can use Radix Dialog or Shadcn Sheet:
+
+<Dialog.Root>
+  <Dialog.Trigger>Open Sheet</Dialog.Trigger>
+  <Dialog.Portal>
+    <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+    <Dialog.Content className="fixed inset-x-4 bottom-4 bg-white dark:bg-neutral-900 rounded-t-lg p-4 shadow-lg">
+      <Dialog.Title className="text-lg font-bold">Options</Dialog.Title>
+      {/* Sheet content */}
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
+
+	•	Styling: Place the dialog content at bottom: use fixed inset-x-0 bottom-0 (or with some margin). Give it rounded-t-lg for a top-rounded corner. Use shadow-lg and background color as in modals.
+	•	Animation: Slide-in/out animation from bottom (see Animations). Optionally dim the overlay with bg-black/50.
+	•	Draggable: (optional) Indicate dragging handle with a small bar at top of sheet (<div className="w-12 h-1.5 bg-neutral-400 rounded mx-auto mb-2"></div>).
+
+Modal Dialog
+
+Use Radix Dialog for modals (accessibility built-in). Structure: <Dialog.Root>, <Dialog.Trigger>, <Dialog.Portal>, <Dialog.Overlay>, <Dialog.Content>, <Dialog.Title>, <Dialog.Description>, and <Dialog.Close>. Example:
+
+<Dialog.Root>
+  <Dialog.Trigger asChild>
+    <button className="px-3 py-2 bg-primary text-white rounded">Open Modal</button>
+  </Dialog.Trigger>
+  <Dialog.Portal>
+    <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+    <Dialog.Content className="fixed inset-0 m-auto max-w-sm p-6 bg-white dark:bg-neutral-800 rounded-lg">
+      <Dialog.Title className="text-lg font-bold">Modal Title</Dialog.Title>
+      <Dialog.Description className="mt-1 text-sm text-neutral-600">A brief description goes here.</Dialog.Description>
+      {/* Modal body elements */}
+      <button className="mt-4 px-3 py-1 bg-secondary text-black rounded">Close</button>
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
+
+	•	Overlay: Use a semi-transparent overlay (bg-black/50) to focus on the modal.
+	•	Content: Center it (inset-0 m-auto) or align top of viewport. Use max-width (max-w-sm or max-w-md). Apply padding, white background, and rounded corners.
+	•	Accessibility: Radix Dialog auto-traps focus and manages ARIA roles. It provides <Dialog.Title> and <Dialog.Description> for screen readers ￼. Pressing Escape will close the dialog by default.
+	•	Interaction: For mobile, ensure modal adapts (full width on phone, smaller on tablet). For transitions, fade the overlay and slide/scale the content (see Animations).
+
+Toast / Notification
+
+Use Radix Toast (Toast.Provider, Toast.Root, Toast.Viewport). Example setup:
+
+<Toast.Provider>
+  {/* Triggering component, e.g. after save */}
+  <Toast.Root open={open} onOpenChange={setOpen}>
+    <Toast.Title className="text-sm font-medium">Saved Successfully</Toast.Title>
+    <Toast.Description className="mt-1 text-sm">Your changes have been saved.</Toast.Description>
+    <Toast.Action asChild altText="Undo">
+      <button className="ml-4 text-primary">Undo</button>
+    </Toast.Action>
+    <Toast.Close asChild>
+      <button className="ml-2">×</button>
+    </Toast.Close>
+  </Toast.Root>
+  <Toast.Viewport className="fixed bottom-4 right-4 space-y-2" />
+</Toast.Provider>
+
+	•	Styling: Toasts typically have a neutral or slightly tinted background (e.g. bg-gray-800 with white text). Use rounded-md shadow and padding. For example: className="bg-neutral-900 text-white px-4 py-2 rounded-md shadow".
+	•	Position: Place the <Toast.Viewport> (container for toasts) fixed at bottom-right or bottom-center. Use p-4 spacing and space-y-2 between toasts.
+	•	Behavior: Radix handles auto-dismiss, pause on hover, and swipe-to-dismiss. Ensure duration (e.g. 3–5s) is set. Provide a close button (Toast.Close) and possibly an action button (Toast.Action).
+
+5. Forms
+	•	Layout: Wrap form fields in a <form className="flex flex-col gap-4">. Use <label> elements for each field. Example:
+
+<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+  <label className="block">
+    <span className="text-sm font-medium">Email</span>
+    <input {...register('email')} type="email"
+           className="mt-1 block w-full rounded border border-gray-300 p-2 focus:ring-1 focus:ring-primary focus:border-primary" />
+    {errors.email && (
+      <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+    )}
+  </label>
+  {/* other fields... */}
+  <button type="submit" className="px-4 py-2 bg-primary text-white rounded">Submit</button>
+</form>
+
+Use block w-full on inputs to fill container width. The label wraps the input and error message for spacing.
+
+	•	Text inputs: Style inputs with border border-gray-300 rounded p-2. On focus, use focus:border-primary focus:ring-1 focus:ring-primary for a blue glow. For disabled: bg-gray-100 cursor-not-allowed.
+	•	Input states: For validation errors, add border-red-600 on the input and show an error text (e.g. red, small font). Also use aria-invalid={errors.email ? "true" : "false"} on the <input> and attach the error <p> with role="alert" for screen readers.
+	•	Checkboxes & Radios: Use Radix primitives or custom styling. Example using Shadcn UI:
+
+<label className="inline-flex items-center">
+  <Checkbox id="remember" className="w-4 h-4 text-primary focus:ring-primary" />
+  <span className="ml-2 text-sm">Remember me</span>
+</label>
+
+Ensure to tie the <label> to the input id. Use focus:ring for keyboard focus.
+
+	•	Sliders: Radix has a Slider component. Style the track and thumb:
+
+<Slider.Root className="w-full h-2" defaultValue={[50]}>
+  <Slider.Track className="bg-gray-300 relative flex-1 rounded-full">
+    <Slider.Range className="absolute bg-primary h-full rounded-full" />
+  </Slider.Track>
+  <Slider.Thumb className="block w-4 h-4 bg-primary rounded-full focus:outline-none focus:ring-primary" />
+</Slider.Root>
+
+
+	•	Form validation: Use React Hook Form + Zod for robust, type-safe validation. For example:
+
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+type FormData = z.infer<typeof schema>;
+
+function MyForm() {
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema)
+  });
+  // ...
+}
+
+This ensures fields match the schema. Zod is a TypeScript-first schema validator that infers types from your schema ￼, making forms type-safe. React Hook Form simplifies the form state; ZodResolver integrates validation. Show error messages from errors.fieldName.message under each input. This combination "guarantee[s] type safety and the correct format for collected data" ￼.
+
+6. Animation & Transitions
+	•	General transitions: Use Tailwind's transition utilities for hover/tap feedback. For example: transition ease-in-out duration-150 on buttons or cards for smooth color or shadow changes. Combine with transforms: e.g.
+
+<button className="transform hover:scale-105 active:scale-95 transition">
+  Tap Me
+</button>
+
+This makes a subtle grow/shrink on press. For focus, include focus:outline-none focus:ring.
+
+	•	Entry/exit animations: For component mount/unmount (modals, popovers, list items), consider Framer Motion. Example:
+
+<motion.div initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.2 }}>
+  {/* content */}
+</motion.div>
+
+This fades and slides content in/out. You can use Framer's <AnimatePresence> around conditionally rendered components (e.g. {isOpen && <Modal>...) for exit animations.
+
+	•	Hover/active feedback: Add micro-animations to UI elements. Buttons may use hover:shadow-md or active:translate-y-0.5. Icons can spin (animate-spin) if indicating loading. Use ease-in or ease-out curves for natural feel.
+	•	Loading indicators: Use Tailwind's animate-spin on an SVG or element:
+
+<svg className="animate-spin h-5 w-5 text-primary" ...>...</svg>
+
+Or a pulsing skeleton:
+
+<div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+
+This indicates loading content.
+
+	•	Consistency: Keep motion subtle and quick (100–300ms). Avoid jarring animations; emphasize feedback, not decoration.
+
+7. Iconography
+	•	Style: Choose a consistent icon set, preferably outline or two-tone style to match the minimal design. Heroicons (by Tailwind Labs) or Tabler Icons work well. Do not mix visual styles.
+	•	Sizing: Use multiples of 4px. Common sizes: w-5 h-5 (20px), w-6 h-6 (24px) for small icons; w-8 h-8 (32px) for larger. Scale icons proportionally with text when needed. For icon buttons, ensure at least 44px touch area (i.e. wrap an icon in a padded <button>).
+	•	Usage: Add icons for recognition (e.g. home, settings). Place icons either inline with text (<Icon className="inline w-5 h-5 align-text-bottom" />) or above labels in nav. When used in buttons, space them:
+
+<button className="flex items-center px-2 py-1 bg-primary text-white rounded">
+  <PlusIcon className="w-5 h-5 mr-2" />
+  Add Item
+</button>
+
+
+	•	ARIA: If an icon is purely decorative, mark it aria-hidden="true". If it conveys meaning (like a button icon), ensure an accessible name via aria-label on the button or a screen-reader-only text. Example: <button aria-label="Close"><XIcon aria-hidden="true" /></button>.
+	•	Color: Typically use a neutral color (e.g. text-neutral-600) or match the context (e.g. text-primary for emphasis). Avoid overly colorful icons outside the accent color.
+	•	Consistency: Keep stroke width and style uniform. Don't mix filled and outline icons in the same UI.
+
+8. Microinteractions
+	•	Loading states: Indicate async actions. Besides spinners/skeletons (see Animation), dim or blur content behind modals or loaders. Disable buttons while processing (opacity-50).
+	•	Success feedback: After actions (e.g. form submit), show a brief success toast or change a button to a checkmark. Example: replace "Submit" with a green check icon for a second.
+	•	Error feedback: Shake or highlight (with red) the problem field. For instance, a quick transform: translateX(2px) animation on error. Always show a clear error message.
+	•	Progress indicators: For multi-step processes, show progress bars (e.g. <div className="w-full bg-gray-200 h-2 rounded"><div className="bg-primary h-2 rounded" style={{width: '60%'}}/></div>). For uploading or long tasks, use an indeterminate bar or spinner.
+	•	Button press: Provide tactile feedback: active:opacity-80 or small scale on tap for touch.
+	•	Hover effects: On interactive elements, consider subtle color or elevation changes on hover (raised shadow) to show interactivity.
+
+9. Accessibility
+	•	Contrast: Ensure text/background contrast meets WCAG AA. For normal text, use a contrast ratio ≥ 4.5:1; for large text (≥18pt or 14pt bold) ≥ 3:1 ￼. Test colors with a contrast checker. For example, black text on white is fine; gray text on light gray should be strong enough.
+	•	Focus management: Always show a visible focus outline. Tailwind's focus:ring-2 focus:ring-offset-2 focus:ring-primary on buttons/inputs is good. Never rely on color alone. For custom components (dialogs, menus), trap focus appropriately. Radix Dialog automatically traps focus inside the modal and adds ARIA roles ￼.
+	•	ARIA roles and labels:
+	•	Use semantic elements (<button>, <input>, <nav>, etc.) so most roles are implicit.
+	•	For dialogs, Radix applies role="dialog" and uses <Dialog.Title>/<Dialog.Description> ￼ to label content. For custom modals, use aria-labelledby and aria-describedby.
+	•	On inputs, use <label for="id"> for text fields. For errors, use aria-invalid="true" and link error text with aria-describedby.
+	•	Non-text buttons (icons) need aria-label. E.g. <button aria-label="Close">×</button>.
+	•	Keyboard navigation: Ensure all UI elements are reachable by Tab/Shift-Tab. Use <button> or <a> (with href="#") instead of <div> for clickable items. Radix components handle keyboard (e.g. Tabs with arrow keys).
+	•	Screen readers: Use hidden (sr-only) text where necessary. Verify reading order is logical. Avoid using only color or icons to convey meaning.
+	•	Form labels: Every input should have a visible <label> or aria-label.
+	•	Responsive text: Allow text to resize or wrap for accessibility (don't use truncation for critical info).
+	•	Summary: By leveraging Radix/Shadcn, much of this (focus, roles) is built-in ￼. Still, test with aXe or Lighthouse to ensure AA compliance.
+
+10. Tone & Voice for Microcopy
+	•	Friendly & helpful: Write as if guiding a friend. Use "you" and active voice. E.g. say "You have no medications listed" instead of "No data" ￼.
+	•	Concise & clear: Keep messages short. Avoid long, formal sentences. For instance, bad: "Unable to retrieve data, please try again later." good: "Oops, something went wrong. Please try again." Short, direct sentences keep users engaged.
+	•	Positive & encouraging: Frame messages constructively. Instead of "Error: invalid input," try "Please check your entry and try again." Use polite tone ("please") and a friendly word ("looks like", "please select", etc.).
+	•	Brand-appropriate: PillSure is a health app – use a calm, reassuring tone. Avoid humor if it could undermine trust. For warnings/errors, be empathetic: "Hmm, that didn't work. Let's try something else." For successes, be encouraging: "Great job! Your profile is updated."
+	•	Everyday language: Use common words, not jargon. (For example, "Search medicines" instead of "Activate search functionality.") As recommended, favor everyday vocabulary and a natural tone ￼.
+	•	Consistency: Button text should be command-style (e.g. "Save", "Delete") using sentence case or title case consistently. Field placeholders and helper text should use sentence case. Don't alternate between "OK" and "Ok" or "YES".
+	•	Error/help text: Be specific and friendly. Instead of technical "Error 404", say "Page not found. Go back to Home." Guide the user on what to do next.
+	•	Examples: "Add Medication" (button), "Your prescription list is empty. Tap + to add." (empty state), "Check your network connection and try again." (error state). Follow UX writing best practices ￼ to address users directly and keep them informed.
+
+Note: This guide serves as a reference for developers using Tailwind CSS, React, and Radix/Shadcn components. Apply these patterns consistently across the app to ensure a cohesive, accessible, and elegant UI. All Tailwind class suggestions above assume a minimal, neutral palette; adjust tokens to match your actual theme values. Always test interactive components for keyboard and screen-reader accessibility. With this system, developers can implement each element cleanly in Cursor.ai or any code environment.

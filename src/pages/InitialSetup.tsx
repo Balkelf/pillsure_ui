@@ -125,7 +125,7 @@ const InitialSetup = () => {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold">PillSure</h1>
-          <p className="text-muted-foreground mt-2">Your personal medication assistant</p>
+          <p className="text-muted-foreground font-light mt-2">Your personal medication assistant</p>
         </div>
 
         <Card>
@@ -166,7 +166,7 @@ const InitialSetup = () => {
               </ToggleGroup>
 
               <div className="bg-secondary/5 p-3 rounded-md">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground font-light">
                   {deviceMode === "daily"
                     ? "✓ Perfect for building habits - refill compartments each day for your daily medication needs. Ideal for new users and those building medication routines."
                     : "✓ Each compartment holds a 3-day supply of medications. Fewer refills required, best for experienced users with established routines."}
@@ -246,7 +246,7 @@ const InitialSetup = () => {
                     <span className="w-full border-t border-gray-300"></span>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-background text-muted-foreground">Or continue with</span>
+                    <span className="px-2 bg-background text-muted-foreground font-light">Or continue with</span>
                   </div>
                 </div>
                 

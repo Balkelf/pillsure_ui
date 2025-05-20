@@ -122,7 +122,7 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
     <div className="space-y-4">
       {combinedSchedule.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No medications scheduled for today</p>
+          <p className="text-muted-foreground font-light">No medications scheduled for today</p>
         </div>
       ) : (
         combinedSchedule.map((med) => (
@@ -134,12 +134,12 @@ const TodaySchedule = ({ schedule, customMedications }: TodayScheduleProps) => {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium">{med.name} {med.dosage}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground font-light">
                     {med.frequency}
                     {med.week !== undefined && ` • Week ${med.week}`}
                   </p>
                   {med.notes && (
-                    <p className="text-xs text-muted-foreground mt-1">{med.notes}</p>
+                    <p className="text-xs text-muted-foreground font-light mt-1">{med.notes}</p>
                   )}
                 </div>
                 <div className="text-sm font-medium">

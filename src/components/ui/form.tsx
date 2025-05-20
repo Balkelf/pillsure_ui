@@ -12,6 +12,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
+import { AlertCircle } from "lucide-react"
 
 const Form = FormProvider
 
@@ -78,7 +79,7 @@ const FormItem = React.forwardRef<
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn("space-y-2", className)} {...props} />
+      <div ref={ref} className={cn("space-y-2 mb-4", className)} {...props} />
     </FormItemContext.Provider>
   )
 })
@@ -93,7 +94,11 @@ const FormLabel = React.forwardRef<
   return (
     <Label
       ref={ref}
-      className={cn(error && "text-destructive", className)}
+      className={cn(
+        "text-sm font-medium", 
+        error && "text-destructive",
+        className
+      )}
       htmlFor={formItemId}
       {...props}
     />
@@ -133,7 +138,7 @@ const FormDescription = React.forwardRef<
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-xs text-muted-foreground font-light", className)}
       {...props}
     />
   )
@@ -155,14 +160,52 @@ const FormMessage = React.forwardRef<
     <p
       ref={ref}
       id={formMessageId}
-      className={cn("text-sm font-medium text-destructive", className)}
+      className={cn(
+        "flex items-center text-xs font-medium text-destructive mt-1",
+        className
+      )}
       {...props}
     >
+      <AlertCircle className="h-3 w-3 mr-1" />
       {body}
     </p>
   )
 })
 FormMessage.displayName = "FormMessage"
+
+const FormSection = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => {
+  return (
+    <div 
+      ref={ref} 
+      className={cn(
+        "pb-6 mb-6 border-b border-muted last:border-0 last:mb-0 last:pb-0", 
+        className
+      )} 
+      {...props} 
+    />
+  )
+})
+FormSection.displayName = "FormSection"
+
+const FormSectionTitle = React.forwardRef<
+  HTMLHeadingElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => {
+  return (
+    <h3 
+      ref={ref} 
+      className={cn(
+        "text-lg font-medium mb-3", 
+        className
+      )} 
+      {...props} 
+    />
+  )
+})
+FormSectionTitle.displayName = "FormSectionTitle"
 
 export {
   useFormField,
@@ -173,4 +216,6 @@ export {
   FormDescription,
   FormMessage,
   FormField,
+  FormSection,
+  FormSectionTitle,
 }

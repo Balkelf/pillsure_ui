@@ -85,7 +85,7 @@ const LoginSection = () => {
             <span className="w-full border-t border-gray-300"></span>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-background text-muted-foreground">Or continue with</span>
+            <span className="px-2 bg-background text-muted-foreground font-light">Or continue with</span>
           </div>
         </div>
         

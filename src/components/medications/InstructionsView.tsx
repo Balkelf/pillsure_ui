@@ -34,7 +34,7 @@ const InstructionsView = ({
           </div>
           <div>
             <h3 className="font-medium">How to Fill Your PillSure Device</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-light">
               Your PillSure device has multiple compartments for your medication schedule
             </p>
           </div>

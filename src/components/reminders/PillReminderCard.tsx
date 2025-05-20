@@ -1,19 +1,22 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Clock, Edit, CheckCircle2, AlertCircle } from "lucide-react";
 import { Reminder, medications } from "@/lib/data";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface PillReminderCardProps {
   reminder: Reminder;
   onToggle?: (id: string, active: boolean) => void;
   onEdit?: (id: string) => void;
+  className?: string;
 }
 
 const PillReminderCard = ({ 
   reminder,
   onToggle,
-  onEdit
+  onEdit,
+  className
 }: PillReminderCardProps) => {
   const medication = medications.find(med => med.id === reminder.medicationId);
   
@@ -53,7 +56,7 @@ const PillReminderCard = ({
   const status = getStatus();
 
   return (
-    <Card>
+    <Card className={className}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -61,18 +64,18 @@ const PillReminderCard = ({
               <Clock className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-medium">{medication?.name || 'Medication'}</h3>
-              <div className="flex items-center">
-                <p className="text-sm text-muted-foreground">{formatTime(reminder.time)}</p>
+              <h3 className="text-base font-medium leading-tight">{medication?.name || 'Medication'}</h3>
+              <div className="flex items-center mt-1">
+                <p className="text-sm text-muted-foreground font-light">{formatTime(reminder.time)}</p>
                 {status === "taken" ? (
                   <div className="ml-2 flex items-center text-green-600">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    <span className="text-xs">Taken</span>
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                    <span className="text-xs font-medium">Taken</span>
                   </div>
                 ) : (
                   <div className="ml-2 flex items-center text-amber-600">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    <span className="text-xs">Upcoming</span>
+                    <AlertCircle className="h-3.5 w-3.5 mr-1" />
+                    <span className="text-xs font-medium">Upcoming</span>
                   </div>
                 )}
               </div>
@@ -80,9 +83,15 @@ const PillReminderCard = ({
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={reminder.active} onCheckedChange={handleToggle} />
-            <button className="h-8 w-8 p-0 flex items-center justify-center rounded-full hover:bg-muted" onClick={handleEdit}>
+            <Button 
+              variant="ghost" 
+              size="icon-sm" 
+              className="rounded-full" 
+              onClick={handleEdit}
+              aria-label="Edit reminder"
+            >
               <Edit className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </div>
       </CardContent>
