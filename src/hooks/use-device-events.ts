@@ -13,9 +13,17 @@ export type ButtonEvent = {
   timestamp: number;
 };
 
+export type BatteryEvent = {
+  type: string;
+  batteryLevel: number;
+  isCharging: boolean;
+  timestamp: number;
+};
+
 export function useDeviceEvents(websocketUrl: string) {
   const [lastBoxEvent, setLastBoxEvent] = useState<BoxEvent | null>(null);
   const [lastButtonEvent, setLastButtonEvent] = useState<ButtonEvent | null>(null);
+  const [lastBatteryEvent, setLastBatteryEvent] = useState<BatteryEvent | null>(null);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -36,6 +44,9 @@ export function useDeviceEvents(websocketUrl: string) {
               setLastBoxEvent(data);
             } else if (data.type === 'buttonEvent') {
               setLastButtonEvent(data);
+            } else if (data.type === 'batteryEvent') {
+              console.log('Received battery event via WebSocket:', data);
+              setLastBatteryEvent(data);
             }
           } catch (err) {
             console.error('Error parsing WebSocket message:', err);
@@ -71,5 +82,5 @@ export function useDeviceEvents(websocketUrl: string) {
     };
   }, [websocketUrl]);
 
-  return { lastBoxEvent, lastButtonEvent, connected };
+  return { lastBoxEvent, lastButtonEvent, lastBatteryEvent, connected };
 } 

@@ -29,10 +29,9 @@ interface Compartment {
 
 interface DailyCompartmentsProps {
   className?: string;
-  deviceMode: "daily" | "multiday";
 }
 
-const DailyCompartments = ({ className, deviceMode = "daily" }: DailyCompartmentsProps) => {
+const DailyCompartments = ({ className }: DailyCompartmentsProps) => {
   // Example data - in a real app, this would come from a backend or parent component
   const [compartments, setCompartments] = useState<Compartment[]>([
     {
@@ -127,12 +126,6 @@ const DailyCompartments = ({ className, deviceMode = "daily" }: DailyCompartment
         <CardTitle className="text-lg">Today</CardTitle>
         <div className="flex justify-between items-center mt-1">
           <p className="text-sm text-muted-foreground font-light">Compartments</p>
-          <span className={cn(
-            "text-sm text-blue-600 font-medium bg-blue-50 px-6 py-1.5 rounded-full",
-            deviceMode === "multiday" && "text-purple-600 bg-purple-50"
-          )}>
-            {deviceMode === "daily" ? "Daily Refill Mode" : "Multi-Day Refill Mode"}
-          </span>
         </div>
       </CardHeader>
       

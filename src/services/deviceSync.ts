@@ -346,7 +346,7 @@ export const subscribeToDeviceStatusUpdates = (onUpdate: (status: DeviceStatusRe
     } catch (error) {
       console.error("Error in device status subscription:", error);
     }
-  }, 5000); // Poll every 5 seconds (increased frequency for better updates)
+  }, 180000); // Poll every 3 minutes
   
   return () => {
     clearInterval(interval);

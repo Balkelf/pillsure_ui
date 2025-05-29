@@ -33,7 +33,32 @@ const DeviceStatusCard = ({
     serialNumber: "Unknown"
   });
   const navigate = useNavigate();
-  const { connected } = useDeviceEventsContext();
+  const { connected, lastBatteryEvent } = useDeviceEventsContext();
+  
+  // Handle real-time battery events from WebSocket
+  useEffect(() => {
+    if (lastBatteryEvent) {
+      console.log('[DeviceStatusCard] Received real-time battery event:', lastBatteryEvent);
+      
+      // Update device data with real-time battery info
+      setDeviceData(prevData => ({
+        ...prevData,
+        batteryLevel: lastBatteryEvent.batteryLevel,
+        isCharging: lastBatteryEvent.isCharging,
+        lastSync: formatDateTime(lastBatteryEvent.timestamp)
+      }));
+      
+      console.log(`[DeviceStatusCard] Battery updated via WebSocket: ${lastBatteryEvent.batteryLevel}% (Charging: ${lastBatteryEvent.isCharging})`);
+      
+      // Show toast notification for significant battery changes
+      const prevLevel = deviceData.batteryLevel;
+      if (prevLevel !== null && Math.abs(prevLevel - lastBatteryEvent.batteryLevel) >= 5) {
+        toast.info(`Battery Level Update`, {
+          description: `Battery is now at ${lastBatteryEvent.batteryLevel}%${lastBatteryEvent.isCharging ? ' (Charging)' : ''}`,
+        });
+      }
+    }
+  }, [lastBatteryEvent]);
   
   // Function to force refresh the device status
   const refreshDeviceStatus = async () => {
@@ -127,12 +152,19 @@ const DeviceStatusCard = ({
     
     loadDeviceData();
     
-    // Subscribe to device status updates
+    // Subscribe to device status updates (as fallback for non-WebSocket data)
     const unsubscribeStatus = subscribeToDeviceStatusUpdates((deviceStatus) => {
       if (deviceStatus) {
         // Save the raw API response for debugging
         setLastApiResponse(JSON.stringify(deviceStatus, null, 2));
-        updateDeviceDataFromStatus(deviceStatus);
+        
+        // Only update if we haven't received real-time data recently
+        if (!lastBatteryEvent || (Date.now() - lastBatteryEvent.timestamp) > 10000) {
+          console.log('[DeviceStatusCard] Using API fallback for battery data');
+          updateDeviceDataFromStatus(deviceStatus);
+        } else {
+          console.log('[DeviceStatusCard] Skipping API update - using real-time WebSocket data');
+        }
       }
     });
     
@@ -147,7 +179,7 @@ const DeviceStatusCard = ({
       unsubscribeStatus();
       unsubscribeLegacy();
     };
-  }, []);
+  }, [lastBatteryEvent]);
   
   // Helper function to update device data from status response
   const updateDeviceDataFromStatus = (status: DeviceStatusResponse) => {
@@ -239,59 +271,6 @@ const DeviceStatusCard = ({
           isCharging={deviceData.isCharging}
           serialNumber={deviceData.serialNumber}
         />
-        <p className={`text-sm font-medium mt-2 ${connected ? "text-green-600" : "text-red-600"}`}>
-          {connected ? "Device connected" : "Device disconnected"}
-        </p>
-        
-        {/* Direct battery display for verification */}
-        <div className="mt-2 text-center">
-          <p className="text-sm font-medium">
-            Battery: {deviceData.batteryLevel !== null ? `${deviceData.batteryLevel}%` : 'Unknown'} 
-            {deviceData.isCharging && ' (Charging)'}
-          </p>
-        </div>
-        
-        {/* Add refresh button */}
-        <div className="mt-4 flex justify-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={refreshDeviceStatus}
-            disabled={loading}
-          >
-            Refresh Device Status
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => testBatteryUpdate(93)}
-            disabled={loading}
-          >
-            Test 93% Battery
-          </Button>
-        </div>
-        
-        {/* Debug section */}
-        <details className="mt-4 text-xs text-muted-foreground">
-          <summary className="cursor-pointer">Debug Info</summary>
-          <div className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-64">
-            <p><strong>Connection Status:</strong> {connected ? "Connected" : "Disconnected"}</p>
-            <p><strong>Battery Level:</strong> {deviceData.batteryLevel !== null ? deviceData.batteryLevel : 'null'} (type: {typeof deviceData.batteryLevel})</p>
-            <p><strong>Battery Calculation:</strong> Using enhanced lithium-ion model with smoothing</p>
-            <p><strong>Last Sync:</strong> {deviceData.lastSync}</p>
-            <p><strong>Charging:</strong> {deviceData.isCharging ? "Yes" : "No"}</p>
-            <p><strong>Serial Number:</strong> {deviceData.serialNumber}</p>
-            <p><strong>API Endpoints:</strong></p>
-            <ul className="list-disc pl-4">
-              <li>Local: http://localhost:1880/api/device-status</li>
-              <li>Remote: http://35.246.27.69:1880/api/device-status</li>
-              <li>Fallback: http://localhost:80/api/device-status</li>
-            </ul>
-            <p className="mt-2"><strong>Last API Response:</strong></p>
-            <pre className="whitespace-pre-wrap overflow-auto">{lastApiResponse}</pre>
-          </div>
-        </details>
       </CardContent>
     </Card>
   );
