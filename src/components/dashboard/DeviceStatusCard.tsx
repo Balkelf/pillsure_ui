@@ -74,17 +74,8 @@ const DeviceStatusCard = ({
         setLastApiResponse(JSON.stringify(deviceStatus, null, 2));
         console.log("[DeviceStatusCard] Raw device status received:", deviceStatus);
         
-        // Check explicit battery level type before updating
-        if (deviceStatus.device) {
-          const batteryValue = deviceStatus.device.batteryLevel;
-          console.log(`[DeviceStatusCard] Battery value type: ${typeof batteryValue}, value: ${batteryValue}`);
-        }
-        
         updateDeviceDataFromStatus(deviceStatus);
         toast.success("Device status refreshed");
-        
-        // Log the battery level so we can see it in the console
-        console.log(`[DeviceStatusCard] Current battery level after update: ${deviceData.batteryLevel}%`);
       } else {
         setLastApiResponse("API call failed - no data returned");
         toast.error("Failed to fetch device status");
@@ -96,22 +87,6 @@ const DeviceStatusCard = ({
     } finally {
       setLoading(false);
     }
-  };
-  
-  // Test function to verify battery display
-  const testBatteryUpdate = (newLevel: number) => {
-    const testStatus: DeviceStatusResponse = {
-      timestamp: Date.now(),
-      device: {
-        serialNumber: deviceData.serialNumber,
-        batteryLevel: newLevel,
-        batteryUpdated: Date.now(),
-        isCharging: deviceData.isCharging
-      },
-      boxes: []
-    };
-    updateDeviceDataFromStatus(testStatus);
-    toast.info(`Test: Battery level set to ${newLevel}%`);
   };
   
   useEffect(() => {
@@ -127,14 +102,6 @@ const DeviceStatusCard = ({
           setLastApiResponse(JSON.stringify(deviceStatus, null, 2));
           updateDeviceDataFromStatus(deviceStatus);
           console.log(`Initial battery level: ${deviceStatus.device.batteryLevel}%`);
-          
-          // If the battery level doesn't match the 93% we saw in logs, force an update
-          if (deviceStatus.device.batteryLevel !== 93) {
-            console.log("Detected mismatch with NodeRed logs. Will update to 93% in 2 seconds");
-            setTimeout(() => {
-              testBatteryUpdate(93);
-            }, 2000);
-          }
         }
         
         // Also fetch the legacy device data for other information
@@ -191,42 +158,12 @@ const DeviceStatusCard = ({
       return;
     }
     
-    // Always attempt to use a number for battery level
-    let batteryLevel = null;
+    // Battery level should now be a standardized percentage value from the parser
+    const batteryLevel = status.device.batteryLevel !== null && status.device.batteryLevel !== undefined 
+      ? Number(status.device.batteryLevel) 
+      : null;
     
-    // Check and process battery level
-    if (status.device.batteryLevel !== null && 
-        status.device.batteryLevel !== undefined) {
-      
-      // First log the exact value and type we received
-      console.log(`[DeviceStatusCard] Raw battery value: ${status.device.batteryLevel} (type: ${typeof status.device.batteryLevel})`);
-      
-      // If it's already a number type, use it directly
-      if (typeof status.device.batteryLevel === 'number') {
-        batteryLevel = status.device.batteryLevel;
-        console.log(`[DeviceStatusCard] Using battery level directly: ${batteryLevel}%`);
-      } else {
-        // Otherwise try to parse it
-      const parsedBattery = Number(status.device.batteryLevel);
-      
-      if (!isNaN(parsedBattery)) {
-        batteryLevel = parsedBattery;
-          console.log(`[DeviceStatusCard] Converted battery level: ${batteryLevel}%`);
-      } else {
-          console.warn(`[DeviceStatusCard] Invalid battery value: ${status.device.batteryLevel} (${typeof status.device.batteryLevel})`);
-        }
-      }
-    } else {
-      console.warn("[DeviceStatusCard] Battery level is null or undefined");
-    }
-    
-    // Log the exact value we're setting
-    console.log(`[DeviceStatusCard] Final battery level value: ${batteryLevel !== null ? batteryLevel : 'null'}`);
-    
-    // Forced refresh for debugging - normally this would be removed in production
-    if (batteryLevel !== deviceData.batteryLevel) {
-      console.log(`[DeviceStatusCard] Battery level changed from ${deviceData.batteryLevel}% to ${batteryLevel}%`);
-    }
+    console.log(`[DeviceStatusCard] Battery level: ${batteryLevel !== null ? batteryLevel + '%' : 'unknown'}`);
     
     // Update the device data state
     setDeviceData({
@@ -236,7 +173,7 @@ const DeviceStatusCard = ({
       serialNumber: status.device.serialNumber || "Unknown"
     });
     
-    console.log(`[DeviceStatusCard] Device data updated: Battery=${batteryLevel}, Charging=${status.device.isCharging}, S/N=${status.device.serialNumber}`);
+    console.log(`[DeviceStatusCard] Device data updated: Battery=${batteryLevel}%, Charging=${status.device.isCharging}, S/N=${status.device.serialNumber}`);
   };
   
   const formatDateTime = (timestamp: number | string) => {

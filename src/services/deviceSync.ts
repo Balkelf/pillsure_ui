@@ -7,7 +7,7 @@ export interface DeviceStatusResponse {
   timestamp: number;
   device: {
     serialNumber: string;
-    batteryLevel: number;
+    batteryLevel: number | null;
     batteryUpdated: number;
     isCharging: boolean;
   };
@@ -47,10 +47,10 @@ export interface DeviceData {
 }
 
 // Track last known battery level across API calls
-let _lastKnownBatteryLevel: number = 93; // Initialize with latest value from logs
+let _lastKnownBatteryLevel: number | null = null; // Remove hardcoded value
 
 // Helper to get the last known battery level
-function getLastKnownBatteryLevel(): number {
+function getLastKnownBatteryLevel(): number | null {
   return _lastKnownBatteryLevel;
 }
 
@@ -64,15 +64,15 @@ function updateLastKnownBatteryLevel(level: number | null): void {
 
 // Helper function to generate mock data when API calls fail
 function getMockDeviceStatus(): DeviceStatusResponse {
-  console.log("Generating mock data for development with latest battery level");
+  console.log("Generating mock data for development - no battery level available");
   
   return {
     timestamp: Date.now(),
     device: {
       serialNumber: "866760051856088-DEMO",
-      batteryLevel: getLastKnownBatteryLevel(), // Use dynamic battery level
+      batteryLevel: null, // No mock battery level
       batteryUpdated: Date.now(),
-      isCharging: true
+      isCharging: false
     },
     boxes: [
       {
