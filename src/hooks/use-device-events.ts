@@ -1,5 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 
+// Device Event Constants (matching the DailyCompartments component)
+export const DEVICE_EVENTS = {
+  LID_1_OPEN: 0x0001,
+  LID_1_CLOSE: 0x0002,
+  LID_2_OPEN: 0x0004,
+  LID_2_CLOSE: 0x0008,
+  LID_3_OPEN: 0x0010,
+  LID_3_CLOSE: 0x0020,
+  RELOAD_EVENT: 0x0040,
+  TILT_EVENT: 0x0080,
+  BUTTON_EVENT: 0x0100,
+  PILL_MISS_EVENT: 0x0200,
+  PILL_TAKE_EVENT: 0x0400,
+} as const;
+
 export type BoxEvent = {
   type: string;
   boxId: number;
@@ -20,55 +35,165 @@ export type BatteryEvent = {
   timestamp: number;
 };
 
+// New pill-specific event types
+export type PillEvent = {
+  type: 'pillEvent';
+  eventCode: number;
+  compartmentId: number;
+  eventName: 'PILL_TAKE_EVENT' | 'PILL_MISS_EVENT' | 'LID_OPEN' | 'LID_CLOSE' | 'OTHER';
+  timestamp: number;
+  rawData?: any;
+};
+
+export type DeviceConnectionStatus = {
+  connected: boolean;
+  lastSeen?: Date;
+  reconnectAttempts: number;
+};
+
 export function useDeviceEvents(websocketUrl: string) {
   const [lastBoxEvent, setLastBoxEvent] = useState<BoxEvent | null>(null);
   const [lastButtonEvent, setLastButtonEvent] = useState<ButtonEvent | null>(null);
   const [lastBatteryEvent, setLastBatteryEvent] = useState<BatteryEvent | null>(null);
-  const [connected, setConnected] = useState(false);
+  const [lastPillEvent, setLastPillEvent] = useState<PillEvent | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<DeviceConnectionStatus>({
+    connected: false,
+    reconnectAttempts: 0,
+  });
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function to parse pill events from raw device data
+  const parsePillEvent = (eventCode: number, rawData: any): PillEvent => {
+    let eventName: PillEvent['eventName'] = 'OTHER';
+    let compartmentId = 0;
+
+    // Determine event type and compartment
+    if (eventCode === DEVICE_EVENTS.PILL_TAKE_EVENT) {
+      eventName = 'PILL_TAKE_EVENT';
+      compartmentId = rawData.compartmentId || 0;
+    } else if (eventCode === DEVICE_EVENTS.PILL_MISS_EVENT) {
+      eventName = 'PILL_MISS_EVENT';
+      compartmentId = rawData.compartmentId || 0;
+    } else if (eventCode & (DEVICE_EVENTS.LID_1_OPEN | DEVICE_EVENTS.LID_2_OPEN | DEVICE_EVENTS.LID_3_OPEN)) {
+      eventName = 'LID_OPEN';
+      // Determine compartment from lid event
+      if (eventCode & DEVICE_EVENTS.LID_1_OPEN) compartmentId = 1;
+      else if (eventCode & DEVICE_EVENTS.LID_2_OPEN) compartmentId = 2;
+      else if (eventCode & DEVICE_EVENTS.LID_3_OPEN) compartmentId = 3;
+    } else if (eventCode & (DEVICE_EVENTS.LID_1_CLOSE | DEVICE_EVENTS.LID_2_CLOSE | DEVICE_EVENTS.LID_3_CLOSE)) {
+      eventName = 'LID_CLOSE';
+      // Determine compartment from lid event
+      if (eventCode & DEVICE_EVENTS.LID_1_CLOSE) compartmentId = 1;
+      else if (eventCode & DEVICE_EVENTS.LID_2_CLOSE) compartmentId = 2;
+      else if (eventCode & DEVICE_EVENTS.LID_3_CLOSE) compartmentId = 3;
+    }
+
+    return {
+      type: 'pillEvent',
+      eventCode,
+      compartmentId,
+      eventName,
+      timestamp: Date.now(),
+      rawData,
+    };
+  };
 
   useEffect(() => {
     function connect() {
+      // Don't connect if URL is empty (dev mode)
+      if (!websocketUrl || websocketUrl.trim() === "") {
+        console.log('🔧 Device connection disabled (dev mode)');
+        setConnectionStatus({
+          connected: false,
+          reconnectAttempts: 0,
+        });
+        return;
+      }
+
       try {
+        setConnectionStatus(prev => ({
+          ...prev,
+          reconnectAttempts: prev.reconnectAttempts + 1,
+        }));
+
         const ws = new WebSocket(websocketUrl);
         
         ws.onopen = () => {
-          console.log('WebSocket connected to Node-RED');
-          setConnected(true);
+          console.log('🔌 WebSocket connected to Pillsure device');
+          setConnectionStatus({
+            connected: true,
+            lastSeen: new Date(),
+            reconnectAttempts: 0,
+          });
         };
         
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
+            
+            // Update last seen timestamp
+            setConnectionStatus(prev => ({
+              ...prev,
+              lastSeen: new Date(),
+            }));
+
+            // Handle existing event types
             if (data.type === 'boxEvent') {
               setLastBoxEvent(data);
             } else if (data.type === 'buttonEvent') {
               setLastButtonEvent(data);
             } else if (data.type === 'batteryEvent') {
-              console.log('Received battery event via WebSocket:', data);
+              console.log('📱 Received battery event via WebSocket:', data);
               setLastBatteryEvent(data);
+            } 
+            // Handle new pill events
+            else if (data.type === 'pillEvent' || data.eventCode !== undefined) {
+              const pillEvent = parsePillEvent(data.eventCode, data);
+              console.log('💊 Received pill event:', pillEvent);
+              setLastPillEvent(pillEvent);
+            }
+            // Handle raw device events (for backward compatibility)
+            else if (data.eventCode || data.event_code) {
+              const eventCode = data.eventCode || data.event_code;
+              const pillEvent = parsePillEvent(eventCode, data);
+              console.log('🔧 Parsed raw device event:', pillEvent);
+              setLastPillEvent(pillEvent);
             }
           } catch (err) {
-            console.error('Error parsing WebSocket message:', err);
+            console.error('❌ Error parsing WebSocket message:', err);
           }
         };
         
         ws.onclose = () => {
-          console.log('WebSocket disconnected from Node-RED');
-          setConnected(false);
-          // Attempt to reconnect after a delay
-          setTimeout(connect, 3000);
+          console.log('🔌 WebSocket disconnected from Pillsure device');
+          setConnectionStatus(prev => ({
+            ...prev,
+            connected: false,
+          }));
+          
+          // Clear any existing reconnect timeout
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+          }
+          
+          // Attempt to reconnect after a delay (exponential backoff)
+          const delay = Math.min(3000 * Math.pow(1.5, connectionStatus.reconnectAttempts), 30000);
+          reconnectTimeoutRef.current = setTimeout(connect, delay);
         };
         
         ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
+          console.error('❌ WebSocket error:', error);
           ws.close();
         };
         
         wsRef.current = ws;
       } catch (err) {
-        console.error('WebSocket connection error:', err);
-        setConnected(false);
+        console.error('❌ WebSocket connection error:', err);
+        setConnectionStatus(prev => ({
+          ...prev,
+          connected: false,
+        }));
       }
     }
 
@@ -76,11 +201,30 @@ export function useDeviceEvents(websocketUrl: string) {
 
     // Cleanup function
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       if (wsRef.current) {
         wsRef.current.close();
       }
     };
   }, [websocketUrl]);
 
-  return { lastBoxEvent, lastButtonEvent, lastBatteryEvent, connected };
+  return { 
+    // Existing events
+    lastBoxEvent, 
+    lastButtonEvent, 
+    lastBatteryEvent,
+    // New pill events
+    lastPillEvent,
+    // Connection status
+    connectionStatus,
+    connected: connectionStatus.connected, // Backward compatibility
+    // Utility functions
+    sendMessage: (message: any) => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify(message));
+      }
+    }
+  };
 } 

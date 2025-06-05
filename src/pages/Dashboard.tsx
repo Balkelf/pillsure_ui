@@ -79,9 +79,9 @@ const Dashboard = () => {
 
         <DeviceStatusCard />
 
-        <InsightCard />
-
         <DailyCompartments deviceMode={deviceMode} />
+
+        <InsightCard />
 
         <MotivationalWidget />
 
