@@ -14,6 +14,9 @@ import { Separator } from "@/components/ui/separator";
 import { useDeviceEvents, DEVICE_EVENTS } from "@/hooks/use-device-events";
 import { toast } from "@/components/ui/sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { NextMedicationTimerBar } from "./NextMedicationTimerBar";
+import { useNextMedicationTimer } from "@/hooks/useNextMedicationTimer";
+import { useMedicationPersistence } from "@/hooks/useMedicationPersistence";
 
 // Device Event Constants
 // const DEVICE_EVENTS = { ... } - REMOVED
@@ -163,6 +166,14 @@ const DailyCompartments = ({
   // Device connection for real-time updates (only if not in dev mode)
   const deviceEvents = useDeviceEvents(devMode ? "" : websocketUrl);
 
+  // Medication persistence hook
+  const { 
+    persistMedicationStates, 
+    loadPersistedMedicationStates, 
+    clearPersistedStates,
+    getLastSyncTime 
+  } = useMedicationPersistence();
+
   // Screen reader announcement state
   const [announcement, setAnnouncement] = useState("");
 
@@ -216,6 +227,43 @@ const DailyCompartments = ({
     },
   ]);
 
+  // Initialize timer state for next medication
+  const timerState = useNextMedicationTimer(compartments);
+
+  // Load persisted medication states on component mount
+  useEffect(() => {
+    const persistedStates = loadPersistedMedicationStates();
+    
+    if (Object.keys(persistedStates).length > 0) {
+      console.log('🔄 Restoring medication states from localStorage...');
+      
+      setCompartments(prevCompartments => {
+        return prevCompartments.map(compartment => ({
+          ...compartment,
+          medications: compartment.medications.map(medication => {
+            const key = `${compartment.id}-${medication.id}`;
+            const persistedState = persistedStates[key];
+            
+            if (persistedState) {
+              return {
+                ...medication,
+                status: persistedState.status as MedicationStatus,
+                lastUpdated: persistedState.lastUpdated
+              };
+            }
+            
+            return medication;
+          })
+        }));
+      });
+      
+      const lastSync = getLastSyncTime();
+      if (lastSync) {
+        console.log('📅 Last sync:', lastSync.toLocaleString());
+      }
+    }
+  }, [loadPersistedMedicationStates, getLastSyncTime]);
+
   const getCompartmentIcon = (name: string) => {
     switch (name) {
       case "Morning":
@@ -258,8 +306,8 @@ const DailyCompartments = ({
     const oldStatus = medication.status;
     
     // Update the state
-    setCompartments(
-      compartments.map((compartment) => {
+    setCompartments(prevCompartments => {
+      const updatedCompartments = prevCompartments.map((compartment) => {
         if (compartment.id === compartmentId) {
           return {
             ...compartment,
@@ -276,8 +324,13 @@ const DailyCompartments = ({
           };
         }
         return compartment;
-      })
-    );
+      });
+
+      // Persist the updated state immediately
+      persistMedicationStates(updatedCompartments);
+      
+      return updatedCompartments;
+    });
 
     // Show appropriate toast notification
     const medicationName = medication.name;
@@ -419,10 +472,41 @@ const DailyCompartments = ({
     return () => clearInterval(interval);
   }, [compartments]);
 
+  // Reset all medications to pending for new day (RELOAD_EVENT)
+  const resetAllMedicationsToNewDay = () => {
+    console.log('🔄 Device: RELOAD_EVENT - Resetting all medications to new day');
+    setCompartments(prevCompartments => {
+      const updatedCompartments = prevCompartments.map(compartment => ({
+        ...compartment,
+        medications: compartment.medications.map(medication => ({
+          ...medication,
+          status: MedicationStatus.PENDING,
+          lastUpdated: new Date()
+        }))
+      }));
+
+      // Persist the reset state
+      persistMedicationStates(updatedCompartments);
+      
+      return updatedCompartments;
+    });
+    
+    toast.info('📅 New day started - All medications reset to pending', {
+      description: 'Device detected a new day cycle',
+      duration: 4000,
+    });
+  };
+
   // 🔄 Real-time device event processing
   useEffect(() => {
     if (deviceEvents.lastPillEvent) {
       const { eventName, compartmentId, eventCode, timestamp } = deviceEvents.lastPillEvent;
+      
+      // Handle RELOAD_EVENT (affects all compartments)
+      if (eventName === 'RELOAD_EVENT') {
+        resetAllMedicationsToNewDay();
+        return;
+      }
       
       // Find the medication for this compartment
       const compartment = compartments.find(c => c.id === compartmentId);
@@ -524,11 +608,311 @@ const DailyCompartments = ({
             }
           }
         },
+        simulatePending: (compartmentId: number) => {
+          console.log(`🧪 Testing: Setting compartment ${compartmentId} to pending state`);
+          const compartment = compartments.find(c => c.id === compartmentId);
+          const medication = compartment?.medications.find(m => m.compartmentId === compartmentId);
+          if (compartment && medication) {
+            updateMedicationStatus(compartment.id, medication.id, MedicationStatus.PENDING, 'device');
+          } else {
+            console.warn(`⚠️ Compartment ${compartmentId} not found`);
+          }
+        },
+        simulateAllPending: () => {
+          console.log('🧪 Testing: Setting all compartments to pending state');
+          compartments.forEach((compartment) => {
+            const medication = compartment.medications[0];
+            if (medication) {
+              updateMedicationStatus(compartment.id, medication.id, MedicationStatus.PENDING, 'device');
+            }
+          });
+          console.log('✅ All medications set to pending');
+        },
+        simulateReloadEvent: () => {
+          console.log(`🧪 Testing: Simulating RELOAD_EVENT`);
+          // Send event through WebSocket if connected
+          if (deviceEvents.connected) {
+            deviceEvents.sendMessage({
+              type: 'pillEvent',
+              eventCode: DEVICE_EVENTS.RELOAD_EVENT,
+              compartmentId: 0,
+              timestamp: Date.now()
+            });
+          } else {
+            console.warn('🚫 Device not connected - cannot send real event');
+            // For testing when device is not connected, manually trigger the reload
+            resetAllMedicationsToNewDay();
+          }
+        },
         // Direct function access - removed handleDeviceEvent reference
         // Utility functions
         getCompartments: () => compartments,
         getDeviceStatus: () => deviceEvents.connectionStatus,
         isDeviceConnected: () => deviceEvents.connected,
+        getTimerState: () => timerState,
+        getNextMedication: () => timerState.nextMedication,
+        // 🌙 Enhanced Timer Testing for Cross-Day Support
+        testTimerPhases: () => {
+          console.log('⏰ Testing ALL Timer Phases (including overnight)...');
+          console.log('Current timer state:', timerState);
+          
+          console.log('Phase 1: Reset to pending state...');
+          resetAllMedicationsToNewDay();
+          
+          setTimeout(() => {
+            console.log('Phase 2: Take morning and lunch (green timer for evening)...');
+            updateMedicationStatus(1, compartments[0]?.medications[0]?.id, MedicationStatus.TAKEN, 'device');
+            updateMedicationStatus(2, compartments[1]?.medications[0]?.id, MedicationStatus.TAKEN, 'device');
+          }, 2000);
+          
+          setTimeout(() => {
+            console.log('Phase 3: Take evening (triggers BLUE overnight timer)...');
+            updateMedicationStatus(3, compartments[2]?.medications[0]?.id, MedicationStatus.TAKEN, 'device');
+            console.log('🌙 Overnight timer should now be visible with BLUE gradient!');
+          }, 4000);
+          
+          console.log('📊 Watch the timer transition through phases over 6 seconds.');
+        },
+        
+        // 🔵 Overnight Timer Specific Tests
+        simulateOvernightTimer: () => {
+          console.log('🌙 Forcing overnight timer scenario...');
+          
+          // Mark all medications as taken to trigger overnight timer
+          compartments.forEach((compartment) => {
+            const medication = compartment.medications[0];
+            if (medication) {
+              updateMedicationStatus(compartment.id, medication.id, MedicationStatus.TAKEN, 'device');
+            }
+          });
+          
+          console.log('✅ All medications marked as taken');
+          console.log('🔵 Timer should show BLUE gradient with "Next medications begin in..." message');
+          console.log('💡 Timer is counting down to tomorrow morning!');
+        },
+        
+        testOvernightPhases: () => {
+          console.log('🌙 Testing overnight timer phases...');
+          
+          // First simulate all taken
+          (window as any).pillsureTest.simulateOvernightTimer();
+          
+          setTimeout(() => {
+            console.log('🔍 Checking timer state after overnight activation...');
+            console.log(`Next Medication: ${timerState.nextMedication?.name || 'None'}`);
+            console.log(`Is Next Day: ${timerState.isNextDay}`);
+            console.log(`Current Phase: ${timerState.currentPhase}`);
+            
+            if (timerState.isNextDay) {
+              console.log('✅ Overnight timer successfully activated!');
+              console.log('🔵 Should see blue gradient with moon/sunrise emojis');
+            } else {
+              console.log('❌ Overnight timer not activated - investigating...');
+            }
+          }, 1000);
+        },
+        
+        showTimerDetails: () => {
+          console.log('⏰ Detailed Timer State:');
+          console.log(`➤ Next Medication: ${timerState.nextMedication?.name || 'None'}`);
+          console.log(`➤ Timer Phase: ${timerState.currentPhase}`);
+          console.log(`➤ Is Next Day: ${timerState.isNextDay ? '🌙 YES (Overnight)' : '☀️ NO (Same Day)'}`);
+          console.log(`➤ Last Completed: ${timerState.lastCompletedMedication?.name || 'None'}`);
+          
+          if (timerState.timerStart && timerState.timerEnd) {
+            const now = new Date();
+            const progress = (now.getTime() - timerState.timerStart.getTime()) / 
+                            (timerState.timerEnd.getTime() - timerState.timerStart.getTime());
+            console.log(`➤ Progress: ${(progress * 100).toFixed(1)}%`);
+            
+            const timeLeft = timerState.timerEnd.getTime() - now.getTime();
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            console.log(`➤ Time Remaining: ${hours}hr ${minutes}min`);
+          }
+          
+          if (timerState.isNextDay) {
+            console.log('🔵 OVERNIGHT MODE: Blue gradient timer should be visible');
+          }
+        },
+
+        // 💾 Persistence Testing Commands
+        checkPersistedData: () => {
+          console.log('💾 Checking localStorage data...');
+          const persistedStates = loadPersistedMedicationStates();
+          const lastSync = getLastSyncTime();
+          
+          console.log(`📊 Persisted medications: ${Object.keys(persistedStates).length}`);
+          console.log('📋 Detailed states:', persistedStates);
+          console.log(`📅 Last sync: ${lastSync ? lastSync.toLocaleString() : 'Never'}`);
+          
+          if (Object.keys(persistedStates).length === 0) {
+            console.log('⚠️ No persisted data found - take a medication to see persistence in action');
+          }
+        },
+
+        clearPersistedData: () => {
+          console.log('🗑️ Clearing all persisted medication data...');
+          clearPersistedStates();
+          console.log('✅ Cleared! Refresh page to see medications reset to default state.');
+        },
+
+        testPersistence: () => {
+          console.log('🧪 Testing persistence flow...');
+          
+          // Step 1: Check initial state
+          console.log('Step 1: Checking initial state...');
+          const initialStates = loadPersistedMedicationStates();
+          console.log(`Initial persisted count: ${Object.keys(initialStates).length}`);
+          
+          // Step 2: Take morning medication
+          console.log('Step 2: Taking morning medication...');
+          updateMedicationStatus(1, compartments[0]?.medications[0]?.id, MedicationStatus.TAKEN, 'manual');
+          
+          setTimeout(() => {
+            // Step 3: Check if it was persisted
+            console.log('Step 3: Verifying persistence...');
+            const afterStates = loadPersistedMedicationStates();
+            console.log(`After taking medication: ${Object.keys(afterStates).length} medications persisted`);
+            
+            const morningKey = `1-${compartments[0]?.medications[0]?.id}`;
+            if (afterStates[morningKey]?.status === 'taken') {
+              console.log('✅ Persistence working! Morning medication status saved.');
+              console.log('🔄 Try refreshing the page - timer position should be maintained!');
+            } else {
+              console.log('❌ Persistence failed - investigate...');
+            }
+          }, 100);
+        },
+
+        // 🧪 Simplified Device Event Sequence Testing
+        testAdvancedEventProcessing: () => {
+          console.log('🔬 Testing Real Device Event Sequence...');
+          console.log('Simulating: LID_OPEN → TILT → LID_CLOSE → BUTTON → PILL_TAKE_EVENT');
+          
+          // Step 1: User opens compartment 2 (lunch)
+          console.log('Step 1: LID_2_OPEN - User opens lunch compartment');
+          console.log('  → Device tracks compartment 2 with timestamp');
+          
+          // Step 2: Simulate the complete device sequence
+          setTimeout(() => {
+            console.log('Step 2: Device processes TILT + LID_CLOSE + BUTTON sequence...');
+            console.log('Step 3: Device sends PILL_TAKE_EVENT');
+            (window as any).pillsureTest.simulateTakeEvent(2);
+            console.log('  → Should use compartment 2 from previous LID_OPEN');
+          }, 1000);
+          
+          setTimeout(() => {
+            console.log('✅ Real device sequence test complete!');
+            console.log('💡 The device does the smart detection, we just track context');
+          }, 2000);
+        },
+
+        testTimerAccuracy: () => {
+          console.log('⏱️ Testing Timer Accuracy & Phase Detection...');
+          
+          console.log('Step 1: Check current timer state...');
+          console.log('Timer Phase:', timerState.currentPhase);
+          console.log('Next Medication:', timerState.nextMedication?.name);
+          console.log('Timer Start:', timerState.timerStart?.toLocaleTimeString());
+          console.log('Timer End:', timerState.timerEnd?.toLocaleTimeString());
+          
+          if (timerState.timerStart && timerState.timerEnd) {
+            const now = new Date();
+            const progress = (now.getTime() - timerState.timerStart.getTime()) / 
+                            (timerState.timerEnd.getTime() - timerState.timerStart.getTime());
+            console.log(`Current Progress: ${(progress * 100).toFixed(2)}%`);
+            
+            const timeLeft = timerState.timerEnd.getTime() - now.getTime();
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            console.log(`Time Remaining: ${hours}hr ${minutes}min`);
+          }
+          
+          console.log('✅ Timer accuracy test complete - check values above');
+        },
+
+        validateDeviceIntegration: () => {
+          console.log('🔗 Validating Device-Timer Integration...');
+          
+          console.log('Device Connection:', deviceEvents.connected ? '✅ Connected' : '❌ Disconnected');
+          console.log('Last Pill Event:', deviceEvents.lastPillEvent?.eventName || 'None');
+          console.log('Connection Status:', deviceEvents.connectionStatus);
+          
+          // Test sequence: Take medication and verify timer updates
+          console.log('Starting integration test sequence...');
+          
+          setTimeout(() => {
+            console.log('1. Taking morning medication via device simulation...');
+            (window as any).pillsureTest.simulateTakeEvent(1);
+          }, 1000);
+          
+          setTimeout(() => {
+            console.log('2. Checking timer state after device event...');
+            console.log('Timer updated to:', timerState.nextMedication?.name || 'No next medication');
+            console.log('Last completed:', timerState.lastCompletedMedication?.name || 'None');
+          }, 2000);
+          
+          setTimeout(() => {
+            console.log('✅ Device-timer integration validation complete!');
+          }, 3000);
+        },
+
+        // 🎨 Phase 4 Testing - UI Restructure & Sections
+        testUIRestructure: () => {
+          console.log('🎨 Testing Phase 4: UI Restructure & Sections...');
+          
+          console.log('Step 1: Reset to mixed state for testing...');
+          resetAllMedicationsToNewDay();
+          
+          setTimeout(() => {
+            console.log('Step 2: Take morning medication → Should move to "Taken" section');
+            updateMedicationStatus(1, compartments[0]?.medications[0]?.id, MedicationStatus.TAKEN, 'device');
+          }, 1000);
+          
+          setTimeout(() => {
+            console.log('Step 3: Miss evening medication → Should appear in "Missed" section');
+            updateMedicationStatus(3, compartments[2]?.medications[0]?.id, MedicationStatus.MISSED, 'device');
+          }, 2000);
+          
+          setTimeout(() => {
+            console.log('✅ UI Structure Test Complete!');
+            console.log('📊 Current sections visible:');
+            const pendingCount = compartments.filter(c => c.medications.some(m => m.status === MedicationStatus.PENDING)).length;
+            const takenCount = compartments.filter(c => c.medications.some(m => m.status === MedicationStatus.TAKEN)).length;
+            const missedCount = compartments.filter(c => c.medications.some(m => m.status === MedicationStatus.MISSED)).length;
+            
+            console.log(`  → Pending: ${pendingCount} compartments`);
+            console.log(`  → Taken: ${takenCount} compartments`);
+            console.log(`  → Missed: ${missedCount} compartments`);
+            console.log('🎯 Each section should be visually separated with proper styling');
+          }, 3000);
+        },
+
+        testAllSections: () => {
+          console.log('📱 Testing All UI Sections Simultaneously...');
+          
+          // Create a state where all three sections are visible
+          console.log('Creating mixed state: Pending + Taken + Missed...');
+          
+          // Morning: Taken
+          updateMedicationStatus(1, compartments[0]?.medications[0]?.id, MedicationStatus.TAKEN, 'device');
+          
+          // Lunch: Pending (leave as is)
+          // updateMedicationStatus(2, compartments[1]?.medications[0]?.id, MedicationStatus.PENDING, 'manual');
+          
+          // Evening: Missed
+          updateMedicationStatus(3, compartments[2]?.medications[0]?.id, MedicationStatus.MISSED, 'device');
+          
+          setTimeout(() => {
+            console.log('✅ All sections now visible:');
+            console.log('  1. Pending Medications (top)');
+            console.log('  2. Taken Today (middle)');
+            console.log('  3. Missed Today (bottom)');
+            console.log('🎨 Check the visual hierarchy and separators');
+          }, 1000);
+        },
+
         resetToDefaults: () => {
           setCompartments([
             {
@@ -573,7 +957,7 @@ const DailyCompartments = ({
             },
           ]);
         },
-        // Test all scenarios
+        // Test all scenarios including RELOAD_EVENT
         runFullTest: () => {
           console.log('🧪 === RUNNING FULL PILLSURE TEST ===');
           console.log('1. Device connection status:', deviceEvents.connectionStatus);
@@ -581,21 +965,30 @@ const DailyCompartments = ({
             compartment: c.name,
             status: c.medications[0]?.status
           })));
+          console.log('3. Timer state:', {
+            nextMedication: timerState.nextMedication?.name,
+            currentPhase: timerState.currentPhase
+          });
           
           setTimeout(() => {
-            console.log('3. Taking pill from compartment 2 (Lunch)...');
+            console.log('4. Taking pill from compartment 2 (Lunch)...');
             (window as any).pillsureTest.simulatePillTaken(2);
           }, 1000);
           
           setTimeout(() => {
-            console.log('4. Missing pill from compartment 1 (Morning)...');
+            console.log('5. Missing pill from compartment 1 (Morning)...');
             (window as any).pillsureTest.simulatePillMissed(1);
           }, 2000);
           
           setTimeout(() => {
-            console.log('5. Testing invalid compartment...');
-            (window as any).pillsureTest.simulatePillTaken(99);
+            console.log('6. Testing RELOAD_EVENT (new day)...');
+            (window as any).pillsureTest.simulateReloadEvent();
           }, 3000);
+          
+          setTimeout(() => {
+            console.log('7. Testing invalid compartment...');
+            (window as any).pillsureTest.simulatePillTaken(99);
+          }, 4000);
           
           setTimeout(() => {
             console.log('6. Final state:', compartments.map(c => ({
@@ -609,15 +1002,34 @@ const DailyCompartments = ({
       
       console.log('🧪 Pillsure testing interface loaded! Try these commands:');
       console.log(`🔧 Mode: ${devMode ? 'Development (Device connection disabled)' : 'Production (Device connection enabled)'}`);
-      console.log('🎬 NEW: Enhanced with animations and toast notifications!');
-      console.log('pillsureTest.simulatePillTaken(2)    // Take pill from compartment 2 (with animation)');
-      console.log('pillsureTest.simulatePillMissed(1)   // Miss pill from compartment 1 (with animation)');
-      console.log('pillsureTest.runFullTest()           // Run complete test sequence (watch the animations!)');
-      console.log('pillsureTest.getCompartments()       // View current state');
-      console.log('pillsureTest.getDeviceStatus()       // Check device connection');
-      console.log('pillsureTest.isDeviceConnected()     // Quick connection check');
+      console.log('🎬 NEW: Cross-day timer with overnight support!');
+      console.log('');
+      console.log('📊 Basic Tests:');
+      console.log('pillsureTest.simulatePillTaken(2)    // Take pill from compartment 2');
+      console.log('pillsureTest.simulatePillMissed(1)   // Miss pill from compartment 1');
+      console.log('pillsureTest.simulatePending(3)      // Set compartment 3 to pending');
+      console.log('pillsureTest.simulateAllPending()    // Set all compartments to pending');
+      console.log('pillsureTest.runFullTest()           // Run complete test sequence');
+      console.log('');
+      console.log('⏰ Timer Tests:');
+      console.log('pillsureTest.testTimerPhases()       // Test all timer phases (green → blue)');
+      console.log('pillsureTest.simulateOvernightTimer() // Force overnight timer (BLUE)');
+      console.log('pillsureTest.testOvernightPhases()   // Test overnight timer activation');
+      console.log('pillsureTest.showTimerDetails()      // Show detailed timer state');
+      console.log('pillsureTest.testTimerAccuracy()     // Test timer accuracy & phase detection');
+      console.log('');
+      console.log('🔍 State Inspection:');
+      console.log('pillsureTest.getCompartments()       // View medication status');
+      console.log('pillsureTest.getTimerState()         // View timer state');
       console.log('pillsureTest.resetToDefaults()       // Reset to initial state');
-      console.log('💡 Click the status buttons to see manual animations and toasts!');
+      console.log('');
+      console.log('🔬 Phase 3 - Advanced Testing:');
+      console.log('pillsureTest.testAdvancedEventProcessing() // Test real device event sequence');
+      console.log('pillsureTest.validateDeviceIntegration()   // Test device-timer integration');
+      console.log('');
+      console.log('🎨 Phase 4 - UI Structure & Sections:');
+      console.log('pillsureTest.testUIRestructure()    // Test pending/taken/missed sections');
+      console.log('pillsureTest.testAllSections()      // Show all three sections at once');
       if (devMode) {
         console.log('💡 To enable real device connection, pass devMode={false} to component');
       }
@@ -637,9 +1049,9 @@ const DailyCompartments = ({
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg">Today</CardTitle>
-            <div className="flex justify-between items-center mt-1">
+            {/* <div className="flex justify-between items-center mt-1">
               <p className="text-sm text-muted-foreground font-light">Compartments</p>
-            </div>
+            </div> */}
           </div>
           
           {/* Device Status Indicator */}
@@ -706,12 +1118,29 @@ const DailyCompartments = ({
             </TooltipProvider>
           </div>
         </div>
+        
+        {/* Next Medication Timer Bar - Shows below title when there's a pending medication */}
+        {timerState.nextMedication && (
+          <div className="mt-4">
+            <NextMedicationTimerBar
+              nextMedication={timerState.nextMedication}
+              lastMedicationCompletedAt={timerState.lastCompletedMedication?.lastUpdated}
+              isNextDay={timerState.isNextDay}
+              className=""
+            />
+          </div>
+        )}
       </CardHeader>
       
       <CardContent className="pt-4">
         <div className="space-y-6">
-          {compartments.map((compartment, index) => (
-            <div key={compartment.id}>
+          {/* Pending Medications Section */}
+          {compartments
+            .filter(compartment => 
+              compartment.medications.some(med => med.status === MedicationStatus.PENDING)
+            )
+            .map((compartment, index, filteredCompartments) => (
+            <div key={`pending-${compartment.id}`}>
               <div className="flex items-center py-2">
                 <div className="flex-1 flex items-start">
                   <div className="flex flex-col items-center mr-6 w-16">
@@ -722,7 +1151,9 @@ const DailyCompartments = ({
                   </div>
 
                   <div className="flex-1">
-                    {compartment.medications.map((medication) => (
+                    {compartment.medications
+                      .filter(med => med.status === MedicationStatus.PENDING)
+                      .map((medication) => (
                       <div key={medication.id} className="space-y-1">
                         <div className="flex items-center">
                           <span className="font-medium text-sm">{medication.name}</span>
@@ -744,11 +1175,9 @@ const DailyCompartments = ({
                         </div>
                         <div className="text-xs text-muted-foreground font-light">
                           {medication.time}
-                          {medication.status === MedicationStatus.PENDING && (
-                            <span className="ml-2 text-orange-500">
-                              ({formatTimeRemaining(getTimeUntilAutoMiss(medication))})
-                            </span>
-                          )}
+                          <span className="ml-2 text-orange-500">
+                            ({formatTimeRemaining(getTimeUntilAutoMiss(medication))})
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -759,62 +1188,167 @@ const DailyCompartments = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
                         transition={{ duration: 0.2 }}
+                        className="relative"
                       >
-                        <Button
-                          variant="ghost"
-                          size="icon"
+                        {/* Display-only status indicator - device controlled */}
+                        <div
                           className={cn(
-                            "h-12 w-12 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-                            getMedicationStatusStyles(compartment.medications[0]?.status)
+                            "h-12 w-12 flex items-center justify-center rounded-md",
+                            "transition-colors duration-200 bg-gray-50"
                           )}
-                          onClick={() => 
-                            cycleMedicationStatus(compartment.id, compartment.medications[0]?.id)
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              cycleMedicationStatus(compartment.id, compartment.medications[0]?.id);
-                            }
-                          }}
-                          aria-label={`${compartment.medications[0]?.name} medication status: ${compartment.medications[0]?.status}. ${getStatusTransitionText(compartment.medications[0]?.status)}`}
-                          aria-describedby={`medication-${compartment.medications[0]?.id}-description`}
-                          role="button"
-                          tabIndex={0}
+                          aria-label={`${compartment.medications.find(m => m.status === MedicationStatus.PENDING)?.name} medication status: pending. Device controlled - no manual interaction available.`}
+                          role="status"
                         >
                           <MedicationStatusIcon 
-                            status={compartment.medications[0]?.status}
+                            status={MedicationStatus.PENDING}
                             className="sr-only"
                           />
-                          <span className="sr-only">
-                            {compartment.medications[0]?.status === MedicationStatus.TAKEN && "Medication taken"}
-                            {compartment.medications[0]?.status === MedicationStatus.MISSED && "Medication missed"}
-                            {compartment.medications[0]?.status === MedicationStatus.PENDING && "Medication pending"}
-                          </span>
-                          <MedicationStatusIcon status={compartment.medications[0]?.status} />
-                        </Button>
-                        <div 
-                          id={`medication-${compartment.medications[0]?.id}-description`}
-                          className="sr-only"
-                        >
-                          {compartment.medications[0]?.name} {compartment.medications[0]?.dosage} scheduled for {compartment.medications[0]?.time} in {compartment.name} compartment. Current status: {compartment.medications[0]?.status}.
-                          {compartment.medications[0]?.status === MedicationStatus.PENDING && 
-                            ` Time remaining: ${formatTimeRemaining(getTimeUntilAutoMiss(compartment.medications[0]))}`
-                          }
+                          <span className="sr-only">Medication pending</span>
+                          <MedicationStatusIcon status={MedicationStatus.PENDING} />
                         </div>
+                        
+                        {/* Testing button - only visible in dev mode */}
+                        {devMode && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground opacity-50 hover:opacity-100"
+                            onClick={() => {
+                              const pendingMed = compartment.medications.find(m => m.status === MedicationStatus.PENDING);
+                              if (pendingMed) cycleMedicationStatus(compartment.id, pendingMed.id);
+                            }}
+                          >
+                            Test
+                          </Button>
+                        )}
                       </motion.div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-xs">{getStatusTransitionText(compartment.medications[0]?.status)}</p>
+                      <div className="text-xs space-y-1">
+                        <p className="font-medium">Device Controlled</p>
+                        <p className="text-muted-foreground">Status: pending</p>
+                        {devMode && (
+                          <p className="text-blue-500">Dev mode: Click "Test" to override</p>
+                        )}
+                      </div>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              {index < compartments.length - 1 && <Separator className="my-2" />}
+              {index < filteredCompartments.length - 1 && <Separator className="my-2" />}
             </div>
           ))}
+
+          {/* Taken Medications Section */}
+          {compartments.some(compartment => 
+            compartment.medications.some(med => med.status === MedicationStatus.TAKEN)
+          ) && (
+            <>
+              <Separator className="my-6" />
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
+                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                  Taken Today
+                </h3>
+                
+                {compartments
+                  .filter(compartment => 
+                    compartment.medications.some(med => med.status === MedicationStatus.TAKEN)
+                  )
+                  .map((compartment, index, filteredCompartments) => (
+                  <div key={`taken-${compartment.id}`} className="flex items-center py-2 opacity-75">
+                    <div className="flex-1 flex items-start">
+                      <div className="flex flex-col items-center mr-6 w-16">
+                        <div className="p-2 opacity-60">
+                          {getCompartmentIcon(compartment.name)}
+                        </div>
+                        <span className="text-xs mt-1 text-muted-foreground">{compartment.name}</span>
+                      </div>
+
+                      <div className="flex-1">
+                        {compartment.medications
+                          .filter(med => med.status === MedicationStatus.TAKEN)
+                          .map((medication) => (
+                          <div key={medication.id} className="space-y-1">
+                            <div className="flex items-center">
+                              <span className="font-medium text-sm text-muted-foreground">{medication.name}</span>
+                              <Badge variant="secondary" className="ml-2 text-xs">
+                                {medication.dosage}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-muted-foreground font-light">
+                              Taken at {medication.lastUpdated?.toLocaleTimeString() || 'Unknown time'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Taken status icon */}
+                    <div className="h-12 w-12 flex items-center justify-center rounded-md bg-green-50">
+                      <MedicationStatusIcon status={MedicationStatus.TAKEN} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Missed Medications Section (if any) */}
+          {compartments.some(compartment => 
+            compartment.medications.some(med => med.status === MedicationStatus.MISSED)
+          ) && (
+            <>
+              <Separator className="my-6" />
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
+                  <X className="h-4 w-4 mr-2 text-red-500" />
+                  Missed Today
+                </h3>
+                
+                {compartments
+                  .filter(compartment => 
+                    compartment.medications.some(med => med.status === MedicationStatus.MISSED)
+                  )
+                  .map((compartment, index, filteredCompartments) => (
+                  <div key={`missed-${compartment.id}`} className="flex items-center py-2 opacity-75">
+                    <div className="flex-1 flex items-start">
+                      <div className="flex flex-col items-center mr-6 w-16">
+                        <div className="p-2 opacity-60">
+                          {getCompartmentIcon(compartment.name)}
+                        </div>
+                        <span className="text-xs mt-1 text-muted-foreground">{compartment.name}</span>
+                      </div>
+
+                      <div className="flex-1">
+                        {compartment.medications
+                          .filter(med => med.status === MedicationStatus.MISSED)
+                          .map((medication) => (
+                          <div key={medication.id} className="space-y-1">
+                            <div className="flex items-center">
+                              <span className="font-medium text-sm text-muted-foreground">{medication.name}</span>
+                              <Badge variant="destructive" className="ml-2 text-xs">
+                                {medication.dosage}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-muted-foreground font-light">
+                              Missed (due at {medication.time})
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Missed status icon */}
+                    <div className="h-12 w-12 flex items-center justify-center rounded-md bg-red-50">
+                      <MedicationStatusIcon status={MedicationStatus.MISSED} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
       

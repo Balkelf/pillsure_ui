@@ -40,7 +40,7 @@ export type PillEvent = {
   type: 'pillEvent';
   eventCode: number;
   compartmentId: number;
-  eventName: 'PILL_TAKE_EVENT' | 'PILL_MISS_EVENT' | 'LID_OPEN' | 'LID_CLOSE' | 'OTHER';
+  eventName: 'PILL_TAKE_EVENT' | 'PILL_MISS_EVENT' | 'LID_OPEN' | 'LID_CLOSE' | 'RELOAD_EVENT' | 'OTHER';
   timestamp: number;
   rawData?: any;
 };
@@ -62,31 +62,79 @@ export function useDeviceEvents(websocketUrl: string) {
   });
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastOpenedCompartmentRef = useRef<number | null>(null);
+  const lastOpenedTimestampRef = useRef<number | null>(null);
+
+  // Helper function to get the last opened compartment (with recency check)
+  const getLastOpenedCompartment = (): number | null => {
+    const compartment = lastOpenedCompartmentRef.current;
+    const timestamp = lastOpenedTimestampRef.current;
+    
+    // Only use compartment if it was opened within the last 2 minutes (reasonable sequence time)
+    if (compartment && timestamp && (Date.now() - timestamp) < 120000) {
+      return compartment;
+    }
+    
+    // Clear stale data
+    if (timestamp && (Date.now() - timestamp) >= 120000) {
+      console.log(`⏱️ Clearing stale compartment context (${compartment}) after 2 minutes`);
+      lastOpenedCompartmentRef.current = null;
+      lastOpenedTimestampRef.current = null;
+    }
+    
+    return null;
+  };
+
+  // Helper function to track compartment opens
+  const trackCompartmentOpen = (compartmentId: number): void => {
+    lastOpenedCompartmentRef.current = compartmentId;
+    lastOpenedTimestampRef.current = Date.now();
+    console.log(`📂 Tracking compartment ${compartmentId} opened at ${new Date().toLocaleTimeString()}`);
+  };
+
+  // Extract compartment ID from device event bit patterns
+  const extractCompartmentFromEvent = (eventValue: number): number | null => {
+    // Direct compartment detection from LID events
+    if (eventValue & (DEVICE_EVENTS.LID_1_OPEN | DEVICE_EVENTS.LID_1_CLOSE)) return 1; // Morning
+    if (eventValue & (DEVICE_EVENTS.LID_2_OPEN | DEVICE_EVENTS.LID_2_CLOSE)) return 2; // Lunch  
+    if (eventValue & (DEVICE_EVENTS.LID_3_OPEN | DEVICE_EVENTS.LID_3_CLOSE)) return 3; // Evening
+    
+    // For PILL_TAKE_EVENT/PILL_MISS_EVENT: Use compartment from device sequence
+    // Device sends: LID_OPEN → TILT → LID_CLOSE → BUTTON → PILL_TAKE_EVENT
+    if (eventValue & (DEVICE_EVENTS.PILL_TAKE_EVENT | DEVICE_EVENTS.PILL_MISS_EVENT)) {
+      const compartment = getLastOpenedCompartment();
+      if (compartment) {
+        console.log(`💊 ${eventValue & DEVICE_EVENTS.PILL_TAKE_EVENT ? 'PILL_TAKEN' : 'PILL_MISSED'} from compartment ${compartment}`);
+        return compartment;
+      }
+      console.warn(`⚠️ PILL_EVENT without compartment context - sequence may be incomplete`);
+      return null;
+    }
+    
+    return null;
+  };
 
   // Helper function to parse pill events from raw device data
   const parsePillEvent = (eventCode: number, rawData: any): PillEvent => {
     let eventName: PillEvent['eventName'] = 'OTHER';
-    let compartmentId = 0;
+    let compartmentId = extractCompartmentFromEvent(eventCode) || 0;
 
-    // Determine event type and compartment
-    if (eventCode === DEVICE_EVENTS.PILL_TAKE_EVENT) {
+    // Determine event type
+    if (eventCode & DEVICE_EVENTS.PILL_TAKE_EVENT) {
       eventName = 'PILL_TAKE_EVENT';
-      compartmentId = rawData.compartmentId || 0;
-    } else if (eventCode === DEVICE_EVENTS.PILL_MISS_EVENT) {
+    } else if (eventCode & DEVICE_EVENTS.PILL_MISS_EVENT) {
       eventName = 'PILL_MISS_EVENT';
-      compartmentId = rawData.compartmentId || 0;
+    } else if (eventCode & DEVICE_EVENTS.RELOAD_EVENT) {
+      eventName = 'RELOAD_EVENT';
+      compartmentId = 0; // RELOAD_EVENT affects all compartments
     } else if (eventCode & (DEVICE_EVENTS.LID_1_OPEN | DEVICE_EVENTS.LID_2_OPEN | DEVICE_EVENTS.LID_3_OPEN)) {
       eventName = 'LID_OPEN';
-      // Determine compartment from lid event
-      if (eventCode & DEVICE_EVENTS.LID_1_OPEN) compartmentId = 1;
-      else if (eventCode & DEVICE_EVENTS.LID_2_OPEN) compartmentId = 2;
-      else if (eventCode & DEVICE_EVENTS.LID_3_OPEN) compartmentId = 3;
+      // Track which compartment was opened for PILL_TAKE_EVENT fallback
+      if (compartmentId) {
+        trackCompartmentOpen(compartmentId);
+      }
     } else if (eventCode & (DEVICE_EVENTS.LID_1_CLOSE | DEVICE_EVENTS.LID_2_CLOSE | DEVICE_EVENTS.LID_3_CLOSE)) {
       eventName = 'LID_CLOSE';
-      // Determine compartment from lid event
-      if (eventCode & DEVICE_EVENTS.LID_1_CLOSE) compartmentId = 1;
-      else if (eventCode & DEVICE_EVENTS.LID_2_CLOSE) compartmentId = 2;
-      else if (eventCode & DEVICE_EVENTS.LID_3_CLOSE) compartmentId = 3;
     }
 
     return {
@@ -225,6 +273,8 @@ export function useDeviceEvents(websocketUrl: string) {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify(message));
       }
-    }
+    },
+    // Exported helper functions for use in components
+    extractCompartmentFromEvent
   };
 } 
