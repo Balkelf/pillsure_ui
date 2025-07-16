@@ -89,24 +89,24 @@ const DeviceSettings = () => {
     <MobileLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Pillsure Device</h1>
-          <p className="text-muted-foreground font-light">Configure your medication dispenser</p>
+          <h1 className="heading-1 text-foreground">Pillsure Device</h1>
+          <p className="body-1 text-muted-foreground">Configure your medication dispenser</p>
         </div>
 
         {/* Device Name */}
         <div>
-          <h3 className="text-lg font-semibold">Device name</h3>
-          <p className="text-muted-foreground font-light mb-3">Current device: {deviceName}</p>
+          <h3 className="heading-3">Device name</h3>
+          <p className="body-2 text-muted-foreground mb-3">Current device: {deviceName}</p>
           <Button className="w-full" variant="outline">Change device name</Button>
         </div>
 
         {/* Current Compartment Setup */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold">Current compartment setup</h3>
+            <h3 className="heading-3">Current compartment setup</h3>
             <div className="flex items-center text-xs text-muted-foreground">
               <GripVertical className="h-3 w-3 mr-1" />
-              <span>Drag to reorder</span>
+              <span className="caption">Drag to reorder</span>
             </div>
           </div>
           
@@ -149,7 +149,7 @@ const DeviceSettings = () => {
                       <div className="p-2 rounded-full bg-white shadow-sm">
                         {compartment.icon}
                       </div>
-                      <span className="text-sm font-medium text-center">{compartment.name}</span>
+                      <span className="label text-center">{compartment.name}</span>
                     </div>
                     
                     {/* Visual feedback for drag state */}
@@ -160,7 +160,7 @@ const DeviceSettings = () => {
                     {/* Drop zone indicator */}
                     {isDragOver === index && draggedIndex !== index && (
                       <div className="absolute inset-0 border-2 border-green-400 rounded-xl bg-green-100/50 flex items-center justify-center">
-                        <span className="text-xs font-medium text-green-700">Drop here</span>
+                        <span className="caption text-green-700">Drop here</span>
                       </div>
                     )}
                   </div>
@@ -172,8 +172,8 @@ const DeviceSettings = () => {
                 <div className="flex items-start space-x-2">
                   <GripVertical className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div className="text-xs text-blue-700">
-                    <p className="font-medium mb-1">Customize your schedule</p>
-                    <p>Touch and drag any compartment to reorder your daily medication schedule.</p>
+                    <p className="label mb-1">Customize your schedule</p>
+                    <p className="body-2">Touch and drag any compartment to reorder your daily medication schedule.</p>
                   </div>
                 </div>
               </div>

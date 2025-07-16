@@ -20,7 +20,7 @@ export default {
 			}
 		},
 		fontFamily: {
-			sans: ['Simple Sans', 'system-ui', 'sans-serif'],
+			sans: ['Open Sans', 'system-ui', 'sans-serif'],
 			mono: ['Inconsolata', 'Courier New', 'monospace'],
 		},
 		extend: {
@@ -31,8 +31,8 @@ export default {
 				'lg': ['1.125rem', { lineHeight: '1.75rem' }],
 				'xl': ['1.25rem', { lineHeight: '1.75rem' }],
 				'2xl': ['1.5rem', { lineHeight: '2rem' }],
-				'3xl': ['1.875rem', { lineHeight: '2.25rem' }],
-				'4xl': ['2.25rem', { lineHeight: '2.5rem' }],
+				'3xl': ['2rem', { lineHeight: '2.5rem' }],
+				'4xl': ['3rem', { lineHeight: '1' }],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -189,7 +189,18 @@ export default {
 				'fade-out': 'fade-out 0.2s ease-out',
 				'slide-in-up': 'slide-in-up 0.3s ease-out',
 				'slide-out-down': 'slide-out-down 0.3s ease-out'
-			}
+			},
+			letterSpacing: {
+				'tight': '-0.025em',
+				'normal': '0em',
+				'wide': '0.025em',
+				'extra-wide': '0.1em',
+			},
+			fontWeight: {
+				'medium': '500',
+				'semibold': '500',
+				'bold': '500',
+			},
 		}
 	},
 	// @ts-ignore

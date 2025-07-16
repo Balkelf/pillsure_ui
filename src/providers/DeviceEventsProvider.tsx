@@ -1,11 +1,14 @@
 import { ReactNode, createContext, useContext } from 'react';
-import { useDeviceEvents, BoxEvent, ButtonEvent, BatteryEvent, PillEvent, DeviceConnectionStatus } from '@/hooks/use-device-events';
+import { useDeviceEvents, BoxEvent, ButtonEvent, BatteryEvent, ReloadEvent, TiltEvent, PillEvent, SensorDataEvent, DeviceConnectionStatus } from '@/hooks/use-device-events';
 
 type DeviceEventsContextType = {
   lastBoxEvent: BoxEvent | null;
   lastButtonEvent: ButtonEvent | null;
   lastBatteryEvent: BatteryEvent | null;
+  lastReloadEvent: ReloadEvent | null;
+  lastTiltEvent: TiltEvent | null;
   lastPillEvent: PillEvent | null;
+  lastSensorDataEvent: SensorDataEvent | null;
   connectionStatus: DeviceConnectionStatus;
   connected: boolean;
   sendMessage: (message: any) => void;
@@ -15,7 +18,10 @@ const DeviceEventsContext = createContext<DeviceEventsContextType>({
   lastBoxEvent: null,
   lastButtonEvent: null,
   lastBatteryEvent: null,
+  lastReloadEvent: null,
+  lastTiltEvent: null,
   lastPillEvent: null,
+  lastSensorDataEvent: null,
   connectionStatus: { connected: false, reconnectAttempts: 0 },
   connected: false,
   sendMessage: () => {},
@@ -34,7 +40,10 @@ export function DeviceEventsProvider({
     lastBoxEvent, 
     lastButtonEvent, 
     lastBatteryEvent, 
-    lastPillEvent, 
+    lastReloadEvent,
+    lastTiltEvent,
+    lastPillEvent,
+    lastSensorDataEvent, 
     connectionStatus, 
     connected, 
     sendMessage 
@@ -45,7 +54,10 @@ export function DeviceEventsProvider({
       lastBoxEvent, 
       lastButtonEvent, 
       lastBatteryEvent, 
-      lastPillEvent, 
+      lastReloadEvent,
+      lastTiltEvent,
+      lastPillEvent,
+      lastSensorDataEvent, 
       connectionStatus, 
       connected, 
       sendMessage 

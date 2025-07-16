@@ -1,40 +1,30 @@
-import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from '@/hooks/use-toast';
 import { Hand } from 'lucide-react';
 
-interface ButtonEventNotificationProps {
+export interface ButtonPressEventData {
   deviceId: string;
   timestamp: number;
-  onDismiss?: () => void;
 }
 
-export const ButtonEventNotification: React.FC<ButtonEventNotificationProps> = ({
-  deviceId,
-  timestamp,
-  onDismiss
-}) => {
-  const timeString = new Date(timestamp).toLocaleTimeString();
+export const showButtonPressToast = (eventData: ButtonPressEventData) => {
+  const timeString = new Date(eventData.timestamp).toLocaleTimeString();
   
-  return (
-    <Alert className="border-blue-200 bg-blue-50 text-blue-800">
-      <Hand className="h-4 w-4" />
-      <AlertDescription>
-        <div className="flex justify-between items-center">
-          <span>
-            <strong>Button pressed</strong> on device {deviceId} at {timeString}
-          </span>
-          {onDismiss && (
-            <button
-              onClick={onDismiss}
-              className="text-blue-600 hover:text-blue-800 ml-4"
-            >
-              ×
-            </button>
-          )}
-        </div>
-      </AlertDescription>
-    </Alert>
-  );
+  toast({
+    title: "Button Pressed",
+    description: `Device ${eventData.deviceId} button pressed at ${timeString}`,
+    variant: "info",
+    duration: 4000, // Toast will auto-dismiss after 4 seconds
+  });
+};
+
+// Legacy component for backward compatibility (if needed)
+// Use showButtonPressToast function instead for new implementations
+export const ButtonEventNotification = ({ deviceId, timestamp }: ButtonPressEventData) => {
+  // Automatically trigger toast when component is rendered
+  showButtonPressToast({ deviceId, timestamp });
+  
+  // Return null since we're using toast instead of rendering component
+  return null;
 };
 
 export default ButtonEventNotification; 

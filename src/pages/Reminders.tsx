@@ -55,8 +55,8 @@ const Reminders = () => {
     <MobileLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Reminders</h1>
-          <p className="text-muted-foreground font-light">Manage your medication alerts</p>
+          <h1 className="heading-1 text-foreground">Reminders</h1>
+          <p className="body-1 text-muted-foreground">Manage your medication alerts</p>
         </div>
 
         <Card className="bg-blue-50 border-blue-200">
@@ -70,10 +70,10 @@ const Reminders = () => {
                 )}
               </div>
               <div>
-                <h3 className="text-sm font-medium text-blue-800">
+                <h3 className="label text-accent-foreground">
                   {deviceMode === "daily" ? "Daily Refill Mode" : "Multi-Day Refill Mode"}
                 </h3>
-                <p className="text-xs text-blue-700">
+                <p className="caption text-accent-foreground">
                   {deviceMode === "daily"
                     ? "Your device is configured for daily refills. You'll get reminders to fill your device once per day."
                     : "Your device is configured for 3-day refills. You'll get reminders to fill your device every 3 days."}
@@ -85,7 +85,7 @@ const Reminders = () => {
 
         <div className="mt-4 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Smart reminders</h2>
+            <h2 className="heading-2">Smart reminders</h2>
             <Button size="sm" variant="ghost" className="gap-1">
               <Plus className="h-4 w-4" />
               Add
@@ -112,7 +112,7 @@ const Reminders = () => {
           ))}
 
           <div className="flex justify-between items-center mt-6">
-            <h2 className="text-lg font-semibold">Daily reminders</h2>
+            <h2 className="heading-2">Daily reminders</h2>
             <Button size="sm" variant="ghost" className="gap-1">
               <Plus className="h-4 w-4" />
               Add
@@ -155,10 +155,8 @@ const Reminders = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-medium">
-                      {deviceMode === "daily" ? "Daily Device Refill" : "3-Day Device Refill"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground font-light">
+                    <h3 className="label">{deviceMode === "daily" ? "Daily Device Refill" : "3-Day Device Refill"}</h3>
+                    <p className="body-2 text-muted-foreground">
                       {deviceMode === "daily" ? "Every day at 9:00 PM" : "Every 3 days at 9:00 PM"}
                     </p>
                   </div>

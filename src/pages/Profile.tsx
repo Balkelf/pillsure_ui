@@ -94,8 +94,8 @@ const Profile = () => {
     <MobileLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Profile</h1>
-          <p className="text-muted-foreground font-light">Manage your account and preferences</p>
+          <h1 className="heading-1 text-foreground">Profile</h1>
+          <p className="body-1 text-muted-foreground">Manage your account and preferences</p>
         </div>
 
         <Card>
@@ -111,8 +111,8 @@ const Profile = () => {
                 )}
               </Avatar>
               <div>
-                <h2 className="text-xl font-semibold">{profileData.name}</h2>
-                <p className="text-muted-foreground font-light">{profileData.email}</p>
+                <h2 className="heading-2">{profileData.name}</h2>
+                <p className="body-2 text-muted-foreground">{profileData.email}</p>
               </div>
             </div>
             <div className="mt-4">
@@ -142,11 +142,11 @@ const Profile = () => {
                           <item.icon className="h-5 w-5 text-primary" />
                         </div>
                         <div className="text-left">
-                          <h3 className="font-medium">{item.title}</h3>
-                          <p className="text-sm text-muted-foreground font-light">{item.description}</p>
+                          <h3 className="label">{item.title}</h3>
+                          <p className="body-2 text-muted-foreground">{item.description}</p>
                         </div>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground font-light" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </Button>
                 </Link>

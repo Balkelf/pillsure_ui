@@ -1,4 +1,8 @@
+
 Before taking any steps examine what files are needed and which ones are going to be affected
 Always add comments on the code.
+Do not delete them unless they are no longer needed
 Look for extra boosting on your abilities using the MCPs available
+Explain the error fixing process
 Always review the changes in .styles file and update styles accordingly
+Do not duplicate files build on them. 

@@ -18,6 +18,15 @@ export interface DeviceStatusResponse {
     lastCloseTime: number | null;
     pillsTaken: number;
   }>;
+  debug?: {
+    apiCallCount?: number;
+    injectCount?: number;
+    endpoint?: string;
+    lastUpdate?: string;
+    rawBatteryLevel?: any;
+    batteryType?: string;
+    [key: string]: any;
+  };
 }
 
 export interface DeviceData {

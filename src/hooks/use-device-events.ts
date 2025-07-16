@@ -33,6 +33,23 @@ export type BatteryEvent = {
   batteryLevel: number;
   isCharging: boolean;
   timestamp: number;
+  source?: string; // ✅ PHASE 1 FIX: Source tracking (inject_data, hardware_sensor, periodic_data)
+  raw_value?: number; // ✅ PHASE 1 FIX: Original unprocessed value
+  smoothed?: boolean; // ✅ PHASE 1 FIX: Indicates if value was smoothed
+  voltage?: string; // ✅ PHASE 1 FIX: Original voltage for hardware sensors
+  inject_count?: number; // ✅ PHASE 1 FIX: Track inject button usage
+  api_call_count?: number; // ✅ PHASE 1 FIX: Track API call frequency
+};
+
+// Add simple event types for reload and tilt
+export type ReloadEvent = {
+  type: 'reloadEvent';
+  timestamp: number;
+};
+
+export type TiltEvent = {
+  type: 'tiltEvent';
+  timestamp: number;
 };
 
 // New pill-specific event types
@@ -42,6 +59,25 @@ export type PillEvent = {
   compartmentId: number;
   eventName: 'PILL_TAKE_EVENT' | 'PILL_MISS_EVENT' | 'LID_OPEN' | 'LID_CLOSE' | 'RELOAD_EVENT' | 'OTHER';
   timestamp: number;
+  rawData?: any;
+};
+
+// New sensor data event type
+export type SensorDataEvent = {
+  type: 'sensorDataEvent';
+  deviceId: string;
+  serialNumber: string;
+  timestamp: number;
+  battery?: {
+    percentage: number;
+    voltage?: number;
+  };
+  temperature?: number; // Celsius
+  humidity?: number; // Percentage
+  steps?: number;
+  tilt?: number;
+  pillTime?: number;
+  rssi?: number;
   rawData?: any;
 };
 
@@ -55,7 +91,10 @@ export function useDeviceEvents(websocketUrl: string) {
   const [lastBoxEvent, setLastBoxEvent] = useState<BoxEvent | null>(null);
   const [lastButtonEvent, setLastButtonEvent] = useState<ButtonEvent | null>(null);
   const [lastBatteryEvent, setLastBatteryEvent] = useState<BatteryEvent | null>(null);
+  const [lastReloadEvent, setLastReloadEvent] = useState<ReloadEvent | null>(null);
+  const [lastTiltEvent, setLastTiltEvent] = useState<TiltEvent | null>(null);
   const [lastPillEvent, setLastPillEvent] = useState<PillEvent | null>(null);
+  const [lastSensorDataEvent, setLastSensorDataEvent] = useState<SensorDataEvent | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<DeviceConnectionStatus>({
     connected: false,
     reconnectAttempts: 0,
@@ -194,6 +233,15 @@ export function useDeviceEvents(websocketUrl: string) {
             } else if (data.type === 'batteryEvent') {
               console.log('📱 Received battery event via WebSocket:', data);
               setLastBatteryEvent(data);
+            } else if (data.type === 'reloadEvent') {
+              console.log('🔄 Received reload event via WebSocket:', data);
+              setLastReloadEvent(data);
+            } else if (data.type === 'tiltEvent') {
+              console.log('📳 Received tilt event via WebSocket:', data);
+              setLastTiltEvent(data);
+            } else if (data.type === 'sensorDataEvent') {
+              console.log('📊 Received sensor data event via WebSocket:', data);
+              setLastSensorDataEvent(data);
             } 
             // Handle new pill events
             else if (data.type === 'pillEvent' || data.eventCode !== undefined) {
@@ -225,8 +273,8 @@ export function useDeviceEvents(websocketUrl: string) {
             clearTimeout(reconnectTimeoutRef.current);
           }
           
-          // Attempt to reconnect after a delay (exponential backoff)
-          const delay = Math.min(3000 * Math.pow(1.5, connectionStatus.reconnectAttempts), 30000);
+          // Attempt to reconnect after a delay (30 second constant delay)
+          const delay = 30000; // Fixed 30 second delay
           reconnectTimeoutRef.current = setTimeout(connect, delay);
         };
         
@@ -263,8 +311,13 @@ export function useDeviceEvents(websocketUrl: string) {
     lastBoxEvent, 
     lastButtonEvent, 
     lastBatteryEvent,
+    // New simple events
+    lastReloadEvent,
+    lastTiltEvent,
     // New pill events
     lastPillEvent,
+    // New sensor data events
+    lastSensorDataEvent,
     // Connection status
     connectionStatus,
     connected: connectionStatus.connected, // Backward compatibility

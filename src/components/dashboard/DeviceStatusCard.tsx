@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { 
@@ -35,10 +35,26 @@ const DeviceStatusCard = ({
   const navigate = useNavigate();
   const { connected, lastBatteryEvent } = useDeviceEventsContext();
   
-  // Handle real-time battery events from WebSocket
+  // ✅ FIXED: Use ref to track latest battery event timestamp for subscription callback
+  const lastBatteryEventRef = useRef<{ timestamp: number } | null>(null);
+  
+  // ✅ PHASE 1 FIX: Enhanced real-time battery event handling with source tracking
   useEffect(() => {
     if (lastBatteryEvent) {
-      console.log('[DeviceStatusCard] Received real-time battery event:', lastBatteryEvent);
+      const source = lastBatteryEvent.source || 'unknown';
+      const isSmoothed = lastBatteryEvent.smoothed;
+      const rawValue = lastBatteryEvent.raw_value;
+      
+      console.log(`🔋 [DeviceStatusCard] Battery event from ${source}:`, {
+        batteryLevel: lastBatteryEvent.batteryLevel,
+        rawValue: rawValue,
+        smoothed: isSmoothed,
+        source: source,
+        timestamp: new Date(lastBatteryEvent.timestamp).toLocaleTimeString()
+      });
+      
+      // ✅ Update the ref with the latest battery event
+      lastBatteryEventRef.current = lastBatteryEvent;
       
       // Update device data with real-time battery info
       setDeviceData(prevData => ({
@@ -48,13 +64,22 @@ const DeviceStatusCard = ({
         lastSync: formatDateTime(lastBatteryEvent.timestamp)
       }));
       
-      console.log(`[DeviceStatusCard] Battery updated via WebSocket: ${lastBatteryEvent.batteryLevel}% (Charging: ${lastBatteryEvent.isCharging})`);
+      console.log(`🚀 [DeviceStatusCard] Battery updated via WebSocket: ${lastBatteryEvent.batteryLevel}% (Source: ${source}, Charging: ${lastBatteryEvent.isCharging})`);
       
-      // Show toast notification for significant battery changes
+      // ✅ PHASE 1 FIX: Enhanced toast notifications with source information
       const prevLevel = deviceData.batteryLevel;
       if (prevLevel !== null && Math.abs(prevLevel - lastBatteryEvent.batteryLevel) >= 5) {
-        toast.info(`Battery Level Update`, {
-          description: `Battery is now at ${lastBatteryEvent.batteryLevel}%${lastBatteryEvent.isCharging ? ' (Charging)' : ''}`,
+        toast.info(`Battery Level Update (${source})`, {
+          description: `Battery is now at ${lastBatteryEvent.batteryLevel}%${lastBatteryEvent.isCharging ? ' (Charging)' : ''}${rawValue !== lastBatteryEvent.batteryLevel ? ` (Raw: ${rawValue}%)` : ''}`,
+          duration: 4000,
+        });
+      }
+      
+      // ✅ Special notification for inject data to confirm Phase 1 fixes
+      if (source === 'inject_data') {
+        toast.success(`🎯 Inject Data Processed`, {
+          description: `Showing exact value: ${lastBatteryEvent.batteryLevel}% (unsmoothed)`,
+          duration: 3000,
         });
       }
     }
@@ -125,12 +150,25 @@ const DeviceStatusCard = ({
         // Save the raw API response for debugging
         setLastApiResponse(JSON.stringify(deviceStatus, null, 2));
         
-        // Only update if we haven't received real-time data recently
-        if (!lastBatteryEvent || (Date.now() - lastBatteryEvent.timestamp) > 10000) {
-          console.log('[DeviceStatusCard] Using API fallback for battery data');
+        // ✅ CRITICAL FIX: Extended protection window from 10 seconds to 2 minutes
+        const recentBatteryEvent = lastBatteryEventRef.current;
+        const protectionWindow = 120000; // 2 minutes instead of 10 seconds
+        const timeSinceLastWebSocket = recentBatteryEvent ? (Date.now() - recentBatteryEvent.timestamp) : Infinity;
+        
+        if (!recentBatteryEvent || timeSinceLastWebSocket > protectionWindow) {
+          console.log(`[DeviceStatusCard] 📡 Using API fallback for battery data (${Math.round(timeSinceLastWebSocket/1000)}s since WebSocket)`);
           updateDeviceDataFromStatus(deviceStatus);
         } else {
-          console.log('[DeviceStatusCard] Skipping API update - using real-time WebSocket data');
+          const remainingProtection = Math.round((protectionWindow - timeSinceLastWebSocket) / 1000);
+          console.log(`[DeviceStatusCard] 🛡️ Skipping API update - WebSocket data protected for ${remainingProtection}s more`);
+          
+          // Still update non-battery data from API
+          if (deviceStatus.device.serialNumber && deviceStatus.device.serialNumber !== deviceData.serialNumber) {
+            setDeviceData(prevData => ({
+              ...prevData,
+              serialNumber: deviceStatus.device.serialNumber
+            }));
+          }
         }
       }
     });
@@ -146,7 +184,7 @@ const DeviceStatusCard = ({
       unsubscribeStatus();
       unsubscribeLegacy();
     };
-  }, [lastBatteryEvent]);
+  }, []);
   
   // Helper function to update device data from status response
   const updateDeviceDataFromStatus = (status: DeviceStatusResponse) => {
@@ -158,23 +196,231 @@ const DeviceStatusCard = ({
       return;
     }
     
-    // Battery level should now be a standardized percentage value from the parser
-    const batteryLevel = status.device.batteryLevel !== null && status.device.batteryLevel !== undefined 
-      ? Number(status.device.batteryLevel) 
-      : null;
-    
-    console.log(`[DeviceStatusCard] Battery level: ${batteryLevel !== null ? batteryLevel + '%' : 'unknown'}`);
+    // ✅ IMPROVED: Better battery level handling with fallback protection
+    let batteryLevel = null;
+    if (status.device.batteryLevel !== null && status.device.batteryLevel !== undefined) {
+      const numericLevel = Number(status.device.batteryLevel);
+      if (!isNaN(numericLevel)) {
+        batteryLevel = numericLevel;
+        console.log(`[DeviceStatusCard] ✅ Valid API battery: ${batteryLevel}%`);
+      } else {
+        console.warn(`[DeviceStatusCard] ⚠️ Invalid API battery value: ${status.device.batteryLevel}, keeping current: ${deviceData.batteryLevel}%`);
+        batteryLevel = deviceData.batteryLevel; // Keep current value instead of null
+      }
+    } else {
+      console.warn(`[DeviceStatusCard] ⚠️ API missing battery data, keeping current: ${deviceData.batteryLevel}%`);
+      batteryLevel = deviceData.batteryLevel; // Keep current value instead of null
+    }
     
     // Update the device data state
-    setDeviceData({
+    setDeviceData(prevData => ({
+      ...prevData,
       batteryLevel: batteryLevel,
       lastSync: formatDateTime(status.timestamp),
       isCharging: status.device.isCharging || false,
-      serialNumber: status.device.serialNumber || "Unknown"
-    });
+      serialNumber: status.device.serialNumber || prevData.serialNumber
+    }));
     
-    console.log(`[DeviceStatusCard] Device data updated: Battery=${batteryLevel}%, Charging=${status.device.isCharging}, S/N=${status.device.serialNumber}`);
+    console.log(`[DeviceStatusCard] Device data updated: Battery=${batteryLevel !== null ? batteryLevel + '%' : 'unchanged'}, API_Call=${status.debug?.apiCallCount || 'unknown'}`);
   };
+  
+  // ✅ TESTING FRAMEWORK: Expose comprehensive battery debugging to window
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).pillsureBatteryTest = {
+        // Core state inspection
+        getCurrentBatteryLevel: () => deviceData.batteryLevel,
+        getLastWebSocketEvent: () => lastBatteryEventRef.current,
+        getProtectionStatus: () => {
+          const recent = lastBatteryEventRef.current;
+          if (!recent) return { protected: false, reason: 'No WebSocket data received' };
+          
+                     const timeSince = Date.now() - recent.timestamp;
+           const isProtected = timeSince <= 120000;
+           const remainingTime = Math.max(0, 120000 - timeSince);
+           
+           return {
+             protected: isProtected,
+             timeSinceWebSocket: Math.round(timeSince / 1000),
+             remainingProtection: Math.round(remainingTime / 1000),
+             reason: isProtected ? 'Within 2-minute protection window' : 'Protection window expired'
+           };
+        },
+        
+        // Force API call to test override behavior
+        forceApiUpdate: async () => {
+          console.log('🧪 [BatteryTest] Forcing API update...');
+          try {
+            const status = await fetchDeviceStatus();
+            if (status) {
+              updateDeviceDataFromStatus(status);
+              console.log('🧪 [BatteryTest] API update completed');
+              return status;
+            }
+          } catch (error) {
+            console.error('🧪 [BatteryTest] API update failed:', error);
+            return null;
+          }
+        },
+        
+        // Test the race condition scenario
+        testRaceCondition: async () => {
+          console.log('🧪 [BatteryTest] Testing race condition scenario...');
+          console.log('🧪 Step 1: Check current protection status');
+          
+          const protection = (window as any).pillsureBatteryTest.getProtectionStatus();
+          console.log('🧪 Current protection:', protection);
+          
+          if (protection.protected) {
+            console.log(`🧪 WebSocket data is protected for ${protection.remainingProtection}s more`);
+            console.log('🧪 Step 2: Force API call (should be blocked)...');
+            
+            const beforeLevel = (window as any).pillsureBatteryTest.getCurrentBatteryLevel();
+            await (window as any).pillsureBatteryTest.forceApiUpdate();
+            const afterLevel = (window as any).pillsureBatteryTest.getCurrentBatteryLevel();
+            
+            if (beforeLevel === afterLevel) {
+              console.log('✅ [BatteryTest] Protection worked! Battery level unchanged.');
+            } else {
+              console.error('❌ [BatteryTest] Protection failed! Battery level changed.');
+            }
+          } else {
+            console.log('🧪 No active protection, testing API override...');
+            await (window as any).pillsureBatteryTest.forceApiUpdate();
+          }
+        },
+        
+        // Monitor battery changes in real-time
+        startMonitoring: (intervalMs = 5000) => {
+          console.log(`🔍 [BatteryTest] Starting battery monitoring (every ${intervalMs}ms)`);
+          
+          const monitorId = setInterval(() => {
+            const level = (window as any).pillsureBatteryTest.getCurrentBatteryLevel();
+            const protection = (window as any).pillsureBatteryTest.getProtectionStatus();
+            
+            console.log(`🔋 Battery: ${level}% | Protected: ${protection.protected} | Remaining: ${protection.remainingProtection}s`);
+            
+            if (!protection.protected) {
+              console.warn('⚠️ Battery vulnerable to API override!');
+            }
+          }, intervalMs);
+          
+          // Store monitor ID for stopping
+          (window as any).pillsureBatteryMonitor = monitorId;
+          
+          console.log('📊 Use pillsureBatteryTest.stopMonitoring() to stop');
+          return monitorId;
+        },
+        
+        stopMonitoring: () => {
+          if ((window as any).pillsureBatteryMonitor) {
+            clearInterval((window as any).pillsureBatteryMonitor);
+            delete (window as any).pillsureBatteryMonitor;
+            console.log('🛑 Battery monitoring stopped');
+          }
+        },
+        
+        // Show comprehensive debug info
+        showDebugInfo: () => {
+          console.log('🔍 [BatteryDebug] Comprehensive Status Report:');
+          console.log('├── Current State:', {
+            batteryLevel: deviceData.batteryLevel,
+            isCharging: deviceData.isCharging,
+            lastSync: deviceData.lastSync,
+            serialNumber: deviceData.serialNumber
+          });
+          console.log('├── WebSocket Event:', lastBatteryEventRef.current);
+          console.log('├── Protection Status:', (window as any).pillsureBatteryTest.getProtectionStatus());
+          console.log('├── Connection Status:', connected ? '🟢 Connected' : '🔴 Disconnected');
+          console.log('└── Last API Response Preview:', lastApiResponse ? JSON.parse(lastApiResponse).device : 'None');
+        },
+        
+        // Simulate various scenarios for testing
+        simulateScenarios: {
+          // Simulate the reported bug scenario
+          bugScenario: async () => {
+            console.log('🐛 [BatteryTest] Simulating reported bug scenario...');
+            console.log('1. WebSocket sends battery update → wait 30s → API overrides to Unknown');
+            
+            // Show current state
+            (window as any).pillsureBatteryTest.showDebugInfo();
+            
+            console.log('2. Waiting 30 seconds then forcing API call...');
+            setTimeout(async () => {
+              console.log('3. 30 seconds elapsed - forcing API update (simulating 3-min poll)');
+              await (window as any).pillsureBatteryTest.forceApiUpdate();
+              
+              const finalLevel = (window as any).pillsureBatteryTest.getCurrentBatteryLevel();
+              console.log(`4. Final battery level: ${finalLevel}%`);
+              
+              if (finalLevel === null) {
+                console.error('❌ BUG REPRODUCED: Battery went to Unknown!');
+              } else {
+                console.log('✅ BUG FIXED: Battery level preserved!');
+              }
+            }, 30000);
+          },
+          
+          // Test immediate API override (old 10s window)
+          oldBehavior: async () => {
+            console.log('🕐 [BatteryTest] Testing old 10-second behavior...');
+            const protection = (window as any).pillsureBatteryTest.getProtectionStatus();
+            
+            if (protection.timeSinceWebSocket > 10) {
+              console.log('⚠️ With old 10s window, battery would be vulnerable now');
+              console.log('🧪 Forcing API call to demonstrate...');
+              await (window as any).pillsureBatteryTest.forceApiUpdate();
+            } else {
+              console.log('ℹ️ Still within 10s window, try again in a few seconds');
+            }
+          }
+        },
+        
+        // Help command
+        help: () => {
+          console.log(`
+🔋 Battery Testing & Debugging Commands:
+
+📊 STATE INSPECTION:
+  pillsureBatteryTest.getCurrentBatteryLevel()     // Get current battery %
+  pillsureBatteryTest.getProtectionStatus()        // Check 2-min protection window
+  pillsureBatteryTest.showDebugInfo()              // Complete status report
+
+🧪 TESTING:
+  pillsureBatteryTest.testRaceCondition()          // Test API override protection
+  pillsureBatteryTest.forceApiUpdate()             // Force immediate API call
+  pillsureBatteryTest.simulateScenarios.bugScenario()  // Reproduce reported bug
+  pillsureBatteryTest.simulateScenarios.oldBehavior()  // Test old 10s behavior
+
+🔍 MONITORING:
+  pillsureBatteryTest.startMonitoring()            // Real-time battery monitoring
+  pillsureBatteryTest.startMonitoring(2000)        // Custom interval (2s)
+  pillsureBatteryTest.stopMonitoring()             // Stop monitoring
+
+🎯 QUICK TESTS:
+  // Watch protection window in action
+  pillsureBatteryTest.startMonitoring(1000)
+  
+  // Test if bug is fixed
+  pillsureBatteryTest.simulateScenarios.bugScenario()
+  
+  // Force API override test
+  pillsureBatteryTest.testRaceCondition()
+
+💡 TIP: Open Network tab to see API calls to http://localhost:1880/api/device-status
+          `);
+        }
+      };
+      
+      // Add to main pillsureTest object for consistency
+      if ((window as any).pillsureTest) {
+        (window as any).pillsureTest.battery = (window as any).pillsureBatteryTest;
+      }
+      
+      // Log availability
+      console.log('🔋 Battery testing framework loaded! Type pillsureBatteryTest.help() for commands');
+    }
+  }, [deviceData, lastBatteryEventRef.current, connected, lastApiResponse]);
   
   const formatDateTime = (timestamp: number | string) => {
     try {

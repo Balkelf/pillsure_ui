@@ -3,9 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Volume2, Smartphone, Bell, CalendarClock, CalendarDays, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useDeviceEventsContext } from "@/providers/DeviceEventsProvider";
+import { SensorDataNotification } from "@/components/dashboard/SensorDataNotification";
 
 const Notifications = () => {
   const [deviceMode, setDeviceMode] = useState<"daily" | "multiday">("daily");
+  const [showSensorNotification, setShowSensorNotification] = useState(true);
+  const { lastSensorDataEvent } = useDeviceEventsContext();
 
   useEffect(() => {
     const savedMode = localStorage.getItem("pillsureMode") as "daily" | "multiday" | null;
@@ -13,6 +17,13 @@ const Notifications = () => {
       setDeviceMode(savedMode);
     }
   }, []);
+
+  // Show notification again when new sensor data arrives
+  useEffect(() => {
+    if (lastSensorDataEvent) {
+      setShowSensorNotification(true);
+    }
+  }, [lastSensorDataEvent]);
 
   const notificationSettings = [
     {
@@ -58,13 +69,21 @@ const Notifications = () => {
     <MobileLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-          <p className="text-muted-foreground font-light">Manage your notification preferences</p>
+          <h1 className="heading-1 text-foreground">Notifications</h1>
+          <p className="body-1 text-muted-foreground">Manage your notification preferences</p>
         </div>
+
+        {/* Sensor Data Notification */}
+        {lastSensorDataEvent && showSensorNotification && (
+          <SensorDataNotification
+            sensorData={lastSensorDataEvent}
+            onDismiss={() => setShowSensorNotification(false)}
+          />
+        )}
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold leading-tight">Notification preferences</CardTitle>
+            <CardTitle className="heading-2 leading-tight">Notification preferences</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {notificationSettings.map((setting) => (
@@ -74,8 +93,8 @@ const Notifications = () => {
                     <setting.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-base font-medium leading-tight">{setting.title}</h3>
-                    <p className="text-sm text-muted-foreground font-light mt-1">{setting.description}</p>
+                    <h3 className="label">{setting.title}</h3>
+                    <p className="body-2 text-muted-foreground mt-1">{setting.description}</p>
                   </div>
                 </div>
                 <Switch checked={setting.enabled} />
